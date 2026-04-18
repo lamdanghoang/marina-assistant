@@ -30,7 +30,7 @@ export default function ProfileScreen() {
       import('../../src/services/wallet').then(({ getTransactionHistory }) =>
         getTransactionHistory(session.walletAddress, 3).then((t) => { setTxs(t); setLoadingTx(false); })
       );
-      import('../../src/services/contacts').then(({ getContacts }) => getContacts().then(setContacts));
+      import('../../src/services/contacts').then(({ getContacts }) => getContacts(session.walletAddress).then(setContacts));
     }
   }, [session?.walletAddress]);
 

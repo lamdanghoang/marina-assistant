@@ -7,31 +7,34 @@ import { colors, typography, spacing, borderRadius } from '../src/constants/them
 import { GlassPanel } from '../src/components/shared/GlassPanel';
 import { getContacts, addContact, deleteContact } from '../src/services/contacts';
 import type { Contact } from '../src/types';
+import { useAppStore } from '../src/store/appStore';
 
 export default function ContactsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const session = useAppStore((s) => s.session);
+  const addr = session?.walletAddress;
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
   const [newAddr, setNewAddr] = useState('');
 
-  const load = () => getContacts().then(setContacts);
+  const load = () => getContacts(addr).then(setContacts);
   useEffect(() => { load(); }, []);
 
   const filtered = contacts.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
 
   const handleAdd = async () => {
     if (!newName.trim() || !newAddr.trim()) { Alert.alert('Error', 'Enter name and address'); return; }
-    await addContact(newName.trim(), newAddr.trim());
+    await addContact(newName.trim(), newAddr.trim(), addr);
     setNewName(''); setNewAddr(''); setShowAdd(false); load();
   };
 
   const handleDelete = (id: string, name: string) => {
     Alert.alert('Delete', `Remove ${name}?`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => { await deleteContact(id); load(); } },
+      { text: 'Delete', style: 'destructive', onPress: async () => { await deleteContact(id, addr); load(); } },
     ]);
   };
 

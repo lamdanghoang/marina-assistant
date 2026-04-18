@@ -7,24 +7,28 @@ export interface Contact {
   createdAt: string;
 }
 
-const CONTACTS_KEY = 'marina_contacts';
+const CONTACTS_KEY_PREFIX = 'marina_contacts_';
 
-async function load(): Promise<Contact[]> {
-  const raw = await SecureStore.getItemAsync(CONTACTS_KEY);
+function contactsKey(ownerAddress?: string): string {
+  return ownerAddress ? `${CONTACTS_KEY_PREFIX}${ownerAddress.slice(0, 10)}` : 'marina_contacts';
+}
+
+async function load(ownerAddress?: string): Promise<Contact[]> {
+  const raw = await SecureStore.getItemAsync(contactsKey(ownerAddress));
   if (!raw) return [];
   try { return JSON.parse(raw); } catch { return []; }
 }
 
-async function save(contacts: Contact[]): Promise<void> {
-  await SecureStore.setItemAsync(CONTACTS_KEY, JSON.stringify(contacts));
+async function save(contacts: Contact[], ownerAddress?: string): Promise<void> {
+  await SecureStore.setItemAsync(contactsKey(ownerAddress), JSON.stringify(contacts));
 }
 
-export async function getContacts(): Promise<Contact[]> {
-  return load();
+export async function getContacts(ownerAddress?: string): Promise<Contact[]> {
+  return load(ownerAddress);
 }
 
-export async function addContact(name: string, walletAddress: string): Promise<Contact> {
-  const contacts = await load();
+export async function addContact(name: string, walletAddress: string, ownerAddress?: string): Promise<Contact> {
+  const contacts = await load(ownerAddress);
   const contact: Contact = {
     id: Date.now().toString(),
     name: name.trim(),
@@ -32,17 +36,17 @@ export async function addContact(name: string, walletAddress: string): Promise<C
     createdAt: new Date().toISOString(),
   };
   contacts.push(contact);
-  await save(contacts);
+  await save(contacts, ownerAddress);
   return contact;
 }
 
-export async function deleteContact(id: string): Promise<void> {
-  const contacts = await load();
-  await save(contacts.filter((c) => c.id !== id));
+export async function deleteContact(id: string, ownerAddress?: string): Promise<void> {
+  const contacts = await load(ownerAddress);
+  await save(contacts.filter((c) => c.id !== id), ownerAddress);
 }
 
-export async function findByName(name: string): Promise<Contact | null> {
-  const contacts = await load();
+export async function findByName(name: string, ownerAddress?: string): Promise<Contact | null> {
+  const contacts = await load(ownerAddress);
   const lower = name.toLowerCase();
   return contacts.find((c) => c.name.toLowerCase().includes(lower)) ?? null;
 }
