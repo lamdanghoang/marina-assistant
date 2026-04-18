@@ -14,16 +14,20 @@ export default function ProfileScreen() {
   const router = useRouter();
   const session = useAppStore((s) => s.session);
   const setSession = useAppStore((s) => s.setSession);
-  const [balance, setBalance] = useState('--');
+  const balance = useAppStore((s) => s.balance);
+  const setBalance = useAppStore((s) => s.setBalance);
   const [txs, setTxs] = useState<any[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loadingTx, setLoadingTx] = useState(true);
 
   useEffect(() => {
     if (session?.walletAddress) {
-      import('../../src/services/wallet').then(({ getBalance, getTransactionHistory }) => {
-        getBalance(session.walletAddress).then(setBalance);
-        getTransactionHistory(session.walletAddress, 3).then(setTxs);
-      });
+      if (!balance) {
+        import('../../src/services/wallet').then(({ getBalance }) => getBalance(session.walletAddress).then(setBalance));
+      }
+      import('../../src/services/wallet').then(({ getTransactionHistory }) =>
+        getTransactionHistory(session.walletAddress, 3).then((t) => { setTxs(t); setLoadingTx(false); })
+      );
       import('../../src/services/contacts').then(({ getContacts }) => getContacts().then(setContacts));
     }
   }, [session?.walletAddress]);
@@ -65,7 +69,7 @@ export default function ProfileScreen() {
           <View style={styles.portfolioHeader}>
             <View>
               <Text style={styles.sectionLabel}>TOTAL PORTFOLIO VALUE</Text>
-              <Text style={styles.portfolioValue}>{balance} SUI</Text>
+              <Text style={styles.portfolioValue}>{balance ?? '...'} SUI</Text>
             </View>
             <TouchableOpacity>
               <ChevronRight size={20} color={colors.primary} />
@@ -86,7 +90,9 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
       <GlassPanel style={styles.txList}>
-        {txs.length === 0 ? (
+        {loadingTx ? (
+          <Text style={styles.emptyText}>Loading...</Text>
+        ) : txs.length === 0 ? (
           <Text style={styles.emptyText}>No transactions yet</Text>
         ) : txs.map((tx: any, i: number) => (
           <View key={tx.digest || i} style={[styles.txRow, i > 0 && styles.txBorder]}>

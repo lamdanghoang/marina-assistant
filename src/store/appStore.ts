@@ -20,6 +20,10 @@ interface AppState {
   // Animation
   animation: CharacterAnimation;
   setAnimation: (a: CharacterAnimation) => void;
+
+  // Wallet cache
+  balance: string | null;
+  setBalance: (b: string) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -37,4 +41,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   animation: 'idle',
   setAnimation: (animation) => set({ animation }),
+
+  balance: null,
+  setBalance: (balance) => set({ balance }),
 }));

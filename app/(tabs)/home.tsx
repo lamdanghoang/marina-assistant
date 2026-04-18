@@ -19,13 +19,14 @@ export default function HomeScreen() {
   const language = useAppStore((s) => s.language);
   const voiceEnabled = useAppStore((s) => s.voiceEnabled);
   const addMessage = useAppStore((s) => s.addChatMessage);
+  const balance = useAppStore((s) => s.balance);
+  const setBalance = useAppStore((s) => s.setBalance);
   const [listening, setListening] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [msg, setMsg] = useState('Good morning, Traveler. The Sui network is calm today. How can I assist you?');
-  const [balance, setBalance] = useState('--');
 
   useEffect(() => {
-    if (session?.walletAddress) {
+    if (session?.walletAddress && !balance) {
       import('../../src/services/wallet').then(({ getBalance }) => getBalance(session.walletAddress).then(setBalance));
     }
   }, [session?.walletAddress]);
@@ -70,7 +71,7 @@ export default function HomeScreen() {
           <View style={styles.avatar}><Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmFeGsPnMllH0l1nFInGBj-qHptCJ8WngJ8kUxJVNPZ7dplrE2yMjghAIMlqj568baN2o_xzAQElwMaU5TfElbWdPbY-N8dU3hZehrSWLQg7xUURdufYJtMEswe0FofA6kIYa_HoVPDlahzMzNUzjyN7YgrqnQcVs4bBhCcg80FSBwLCvRc5Lam1xoZOvnFe6qdxifymPYxBSS6jw65UIhqrOncqCbDM34aavL_nXM2g29kHjbd5_OzucX1MRYUQ9Vhqc7WwS8SJQ' }} style={{ width: '100%', height: '100%' }} /></View>
           <Text style={styles.addr}>{truncAddr(session?.walletAddress ?? '')}</Text>
         </View>
-        <View style={styles.pill}><Droplets size={14} color={colors.primary} /><Text style={styles.pillText}>{balance} SUI</Text></View>
+        <View style={styles.pill}><Droplets size={14} color={colors.primary} /><Text style={styles.pillText}>{balance ?? '...'} SUI</Text></View>
       </View>
 
       <View style={styles.center}>
