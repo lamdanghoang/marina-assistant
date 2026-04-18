@@ -1,15 +1,34 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Droplets, Database, ArrowUpRight, ArrowDownLeft, RefreshCw, ChevronRight, Bell, ShieldCheck } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius } from '../../src/constants/theme';
 import { GlassPanel } from '../../src/components/shared/GlassPanel';
-import { TRANSACTIONS, CONTACTS } from '../../src/constants/data';
+import { useAppStore } from '../../src/store/appStore';
+import { logout } from '../../src/services/auth';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const session = useAppStore((s) => s.session);
+  const setSession = useAppStore((s) => s.setSession);
+  const [balance, setBalance] = useState('--');
+
+  useEffect(() => {
+    if (session?.walletAddress) {
+      import('../../src/services/wallet').then(({ getBalance }) => getBalance(session.walletAddress).then(setBalance));
+    }
+  }, [session?.walletAddress]);
+
+  const truncAddr = (a: string) => a ? `${a.slice(0, 6)}...${a.slice(-4)}` : '';
+
+  const handleLogout = () => {
+    Alert.alert('Disconnect', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Disconnect', style: 'destructive', onPress: async () => { await logout(); setSession(null); } },
+    ]);
+  };
 
   return (
     <ScrollView style={[styles.container, { paddingTop: insets.top + spacing.md }]} contentContainerStyle={{ paddingBottom: 120 }}>
@@ -22,8 +41,8 @@ export default function ProfileScreen() {
         </View>
         <View style={styles.avatarInfo}>
           <Text style={styles.agentLabel}>AUTHENTICATED AGENT</Text>
-          <Text style={styles.agentName}>Aether Voyager</Text>
-          <Text style={styles.agentDesc}>Synchronized with Sui Testnet. Managing digital assets across the Marina ecosystem.</Text>
+          <Text style={styles.agentName}>{truncAddr(session?.walletAddress ?? '')}</Text>
+          <Text style={styles.agentDesc}>Synchronized with Sui Testnet. Auth: {session?.authMethod ?? 'unknown'}.</Text>
         </View>
       </GlassPanel>
 
@@ -33,7 +52,7 @@ export default function ProfileScreen() {
           <View style={styles.portfolioHeader}>
             <View>
               <Text style={styles.sectionLabel}>TOTAL PORTFOLIO VALUE</Text>
-              <Text style={styles.portfolioValue}>$2,482.12</Text>
+              <Text style={styles.portfolioValue}>{balance} SUI</Text>
             </View>
             <TouchableOpacity>
               <ChevronRight size={20} color={colors.primary} />
@@ -114,6 +133,10 @@ export default function ProfileScreen() {
           </GlassPanel>
         </View>
       </View>
+
+      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+        <Text style={styles.logoutText}>DISCONNECT WALLET</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -192,4 +215,6 @@ const styles = StyleSheet.create({
   configSub: { fontSize: typography.sizes.xs, color: colors.onSurfaceVariant, letterSpacing: typography.tracking.widest, marginTop: 1 },
   toggle: { width: 48, height: 24, borderRadius: 12, backgroundColor: colors.primary, padding: 2, justifyContent: 'center', alignItems: 'flex-end' },
   toggleDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: colors.surface, marginRight: 2 },
+  logoutBtn: { alignItems: 'center', padding: spacing.xl, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: 'rgba(255,113,108,0.3)', marginTop: spacing.md },
+  logoutText: { color: colors.error, fontSize: typography.sizes.sm, fontWeight: typography.weights.bold, letterSpacing: 3 },
 });
