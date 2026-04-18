@@ -7,6 +7,7 @@ import { colors, typography, spacing, borderRadius } from '../../src/constants/t
 import { GlassPanel } from '../../src/components/shared/GlassPanel';
 import { useAppStore } from '../../src/store/appStore';
 import { logout } from '../../src/services/auth';
+import type { Contact } from '../../src/types';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -14,6 +15,18 @@ export default function ProfileScreen() {
   const session = useAppStore((s) => s.session);
   const setSession = useAppStore((s) => s.setSession);
   const [balance, setBalance] = useState('--');
+  const [txs, setTxs] = useState<any[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+
+  useEffect(() => {
+    if (session?.walletAddress) {
+      import('../../src/services/wallet').then(({ getBalance, getTransactionHistory }) => {
+        getBalance(session.walletAddress).then(setBalance);
+        getTransactionHistory(session.walletAddress, 3).then(setTxs);
+      });
+      import('../../src/services/contacts').then(({ getContacts }) => getContacts().then(setContacts));
+    }
+  }, [session?.walletAddress]);
 
   useEffect(() => {
     if (session?.walletAddress) {
@@ -59,8 +72,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
           <View style={styles.tokenList}>
-            <PortfolioItem icon={<Droplets size={18} color={colors.primary} />} title="Sui" sub="SUI Network" amount="12.50 SUI" fiat="≈ $18.45" />
-            <PortfolioItem icon={<Database size={18} color={colors.primary} />} title="Walrus" sub="WAL Storage" amount="4,200 WAL" fiat="≈ $2,100" />
+            <PortfolioItem icon={<Droplets size={18} color={colors.primary} />} title="Sui" sub="SUI Network" amount={`${balance} SUI`} fiat="" />
           </View>
         </GlassPanel>
       </View>
@@ -74,16 +86,18 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
       <GlassPanel style={styles.txList}>
-        {TRANSACTIONS.slice(0, 3).map((tx, i) => (
-          <View key={tx.id} style={[styles.txRow, i > 0 && styles.txBorder]}>
+        {txs.length === 0 ? (
+          <Text style={styles.emptyText}>No transactions yet</Text>
+        ) : txs.map((tx: any, i: number) => (
+          <View key={tx.digest || i} style={[styles.txRow, i > 0 && styles.txBorder]}>
             <View style={styles.txIcon}>
-              {tx.type === 'sent' ? <ArrowUpRight size={20} color={colors.primary} /> : tx.type === 'received' ? <ArrowDownLeft size={20} color={colors.secondary} /> : <RefreshCw size={20} color={colors.primary} />}
+              {tx.txType === 'Send' ? <ArrowUpRight size={20} color={colors.primary} /> : tx.txType === 'Receive' ? <ArrowDownLeft size={20} color={colors.secondary} /> : <RefreshCw size={20} color={colors.primary} />}
             </View>
             <View style={styles.txInfo}>
-              <Text style={styles.txTitle}>{tx.title}</Text>
-              <Text style={styles.txDate}>{tx.date}</Text>
+              <Text style={styles.txTitle}>{tx.txType}</Text>
+              <Text style={styles.txDate}>{tx.timestamp ? new Date(tx.timestamp).toLocaleString() : ''}</Text>
             </View>
-            <Text style={[styles.txAmount, tx.type === 'received' && { color: colors.secondary }]}>{tx.amount}</Text>
+            <Text style={[styles.txAmount, tx.txType === 'Receive' && { color: colors.secondary }]}>-{tx.gasFee} SUI</Text>
           </View>
         ))}
       </GlassPanel>
@@ -98,9 +112,11 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
           <GlassPanel style={styles.contactList}>
-            {CONTACTS.slice(0, 3).map(c => (
+            {contacts.length === 0 ? (
+              <Text style={styles.emptyText}>No contacts yet</Text>
+            ) : contacts.slice(0, 3).map(c => (
               <View key={c.id} style={styles.contactRow}>
-                <View style={styles.contactAvatar}><Text style={{ fontSize: 14 }}>{c.name[0]}</Text></View>
+                <View style={styles.contactAvatar}><Text style={{ fontSize: 14, color: colors.primary }}>{c.name[0]}</Text></View>
                 <Text style={styles.contactName}>{c.name}</Text>
               </View>
             ))}
@@ -217,4 +233,5 @@ const styles = StyleSheet.create({
   toggleDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: colors.surface, marginRight: 2 },
   logoutBtn: { alignItems: 'center', padding: spacing.xl, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: 'rgba(255,113,108,0.3)', marginTop: spacing.md },
   logoutText: { color: colors.error, fontSize: typography.sizes.sm, fontWeight: typography.weights.bold, letterSpacing: 3 },
+  emptyText: { color: colors.onSurfaceVariant, fontSize: typography.sizes.sm, textAlign: 'center', padding: spacing.xl },
 });
