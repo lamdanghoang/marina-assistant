@@ -118,7 +118,7 @@ export async function loginWithGoogle(): Promise<AuthSession> {
     address = jwtToAddress(jwt, salt, false);
   }
 
-  const addressSeed = genAddressSeed(BigInt(salt), 'sub', sub, aud).toString();
+  let addressSeed = genAddressSeed(BigInt(salt), 'sub', sub, aud).toString();
 
   // Enoki zkProof
   let zkProof: string | null = null;
@@ -130,7 +130,10 @@ export async function loginWithGoogle(): Promise<AuthSession> {
     });
     if (proofRes.ok) {
       const resp = await proofRes.json();
-      if (resp.data?.addressSeed) await SecureStore.setItemAsync('marina_zklogin_address_seed', resp.data.addressSeed);
+      // Use Enoki's addressSeed if available — it must match the proof
+      if (resp.data?.addressSeed) {
+        addressSeed = resp.data.addressSeed;
+      }
       zkProof = JSON.stringify(resp.data);
       console.log('zkProof obtained from Enoki');
     }

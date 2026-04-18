@@ -1,5 +1,5 @@
-// Seal encryption service — real threshold encryption with time-lock + ownership
-// Pattern: TLE + private_data (Capsule ownership enforced by Sui)
+// Seal encryption — time-lock only (ephemeral session key)
+// id format: bcs(unlock_time) + random_nonce
 
 const PACKAGE_ID = process.env.EXPO_PUBLIC_CAPSULE_PACKAGE_ID || '';
 
@@ -30,35 +30,28 @@ export async function encrypt(plaintext: string, unlockTimeMs: number, recipient
   const idBytes = new Uint8Array(timeBytes.length + nonce.length);
   idBytes.set(timeBytes, 0);
   idBytes.set(nonce, timeBytes.length);
-  const idHex = toHex(idBytes);
 
   let data = new TextEncoder().encode(plaintext);
 
-  // PQ hybrid: if recipient has ML-KEM key, encrypt data with PQ first
+  // Optional PQ layer
   if (recipientAddress) {
     try {
       const { queryPQPublicKey, pqEncrypt } = await import('./pq-crypto');
       const recipientPK = await queryPQPublicKey(recipientAddress);
       if (recipientPK) {
         const { ciphertext, kemCiphertext } = await pqEncrypt(data, recipientPK);
-        // Pack: [1 byte flag][4 bytes kem length][kemCiphertext][ciphertext]
         const packed = new Uint8Array(1 + 4 + kemCiphertext.length + ciphertext.length);
-        packed[0] = 1; // PQ flag
+        packed[0] = 1;
         new DataView(packed.buffer).setUint32(1, kemCiphertext.length);
         packed.set(kemCiphertext, 5);
         packed.set(ciphertext, 5 + kemCiphertext.length);
         data = packed;
-        console.log('PQ hybrid encryption applied');
       }
-    } catch (err) {
-      console.warn('PQ encryption skipped:', err);
-    }
+    } catch {}
   }
 
   const client = await getSealClient();
-  const result = await client.encrypt({ threshold: 2, packageId: PACKAGE_ID, id: idHex, data });
-
-  console.log('Seal encrypted:', plaintext.length, '→', result.encryptedObject.length, 'bytes');
+  const result = await client.encrypt({ threshold: 2, packageId: PACKAGE_ID, id: toHex(idBytes), data });
   return { encryptedData: result.encryptedObject, nonce };
 }
 
@@ -74,67 +67,36 @@ export async function decrypt(encryptedData: Uint8Array, userAddress: string, ca
   const parsed = EncryptedObject.parse(encryptedData);
   const idHex = typeof parsed.id === 'string' ? parsed.id : Array.from(parsed.id as Uint8Array).map((b: number) => b.toString(16).padStart(2, '0')).join('');
   const idBytes: number[] = [];
-  for (let i = 0; i < idHex.length; i += 2) {
-    idBytes.push(parseInt(idHex.substring(i, i + 2), 16));
-  }
+  for (let i = 0; i < idHex.length; i += 2) idBytes.push(parseInt(idHex.substring(i, i + 2), 16));
 
-  // Session key — need user's real keypair to sign
-  const { getStoredKeypair, loadSession, signTransactionZkLogin } = await import('./auth');
-  const session = await loadSession();
-  const userKeypair = await getStoredKeypair();
+  // Ephemeral session key
+  const sessionKp = new Ed25519Keypair();
+  const sessionKey = await SessionKey.create({
+    address: sessionKp.getPublicKey().toSuiAddress(),
+    packageId: PACKAGE_ID,
+    ttlMin: 10,
+    signer: sessionKp,
+    suiClient,
+  });
 
-  let sessionKey: any;
-  if (session?.authMethod === 'wallet' && userKeypair) {
-    // Wallet login: keypair address matches user address
-    sessionKey = await SessionKey.create({
-      address: userAddress,
-      packageId: PACKAGE_ID,
-      ttlMin: 10,
-      signer: userKeypair,
-      suiClient,
-    });
-  } else {
-    // zkLogin: create without signer, sign personal message manually
-    sessionKey = await SessionKey.create({
-      address: userAddress,
-      packageId: PACKAGE_ID,
-      ttlMin: 10,
-      suiClient,
-    });
-    // Sign personal message with ephemeral keypair
-    if (userKeypair) {
-      const msg = sessionKey.getPersonalMessage();
-      const { signature } = await userKeypair.signPersonalMessage(msg);
-      await sessionKey.setPersonalMessageSignature(signature);
-    }
-  }
-
-  // Build seal_approve TX
+  // Build TX — time-lock only: id + clock
   const tx = new Transaction();
-  tx.setSender(userAddress);
-  const args: any[] = [tx.pure.vector('u8', idBytes), tx.object('0x6')];
-  if (capsuleObjectId) args.push(tx.object(capsuleObjectId));
   tx.moveCall({
     target: `${PACKAGE_ID}::seal_timelock::seal_approve`,
-    arguments: args,
+    arguments: [tx.pure.vector('u8', idBytes), tx.object('0x6')],
   });
   const txBytes = await tx.build({ client: suiClient, onlyTransactionKind: true });
 
   const decrypted = await client.decrypt({ data: encryptedData, sessionKey, txBytes });
 
-  // Check PQ flag
+  // Handle PQ layer
   if (decrypted[0] === 1) {
-    console.log('PQ hybrid decryption...');
     const { getLocalSecretKey, pqDecrypt } = await import('./pq-crypto');
     const sk = await getLocalSecretKey();
-    if (!sk) throw new Error('PQ secret key not found. Unable to decrypt.');
+    if (!sk) throw new Error('PQ secret key not found.');
     const kemLen = new DataView(decrypted.buffer, decrypted.byteOffset).getUint32(1);
-    const kemCiphertext = decrypted.slice(5, 5 + kemLen);
-    const ciphertext = decrypted.slice(5 + kemLen);
-    const plainBytes = await pqDecrypt(ciphertext, kemCiphertext, sk);
-    return new TextDecoder().decode(plainBytes);
+    return new TextDecoder().decode(await pqDecrypt(decrypted.slice(5 + kemLen), decrypted.slice(5, 5 + kemLen), sk));
   }
 
-  console.log('Seal decrypted:', encryptedData.length, '→', decrypted.length, 'bytes');
   return new TextDecoder().decode(decrypted);
 }

@@ -144,7 +144,7 @@ async function createCapsuleOnChain(
     signature = (await keypair.signTransaction(txBytes)).signature;
   }
 
-  // Submit via JSON RPC
+  // Submit transaction
   const res = await fetch('https://fullnode.testnet.sui.io:443', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -155,7 +155,6 @@ async function createCapsuleOnChain(
     }),
   });
   const json = await res.json();
-  console.log('Capsule TX result:', json.error?.message || json.result?.effects?.status?.status);
   if (json.error) throw new Error(json.error.message);
   const created = json.result?.objectChanges?.find((o: any) => o.type === 'created' && o.objectType?.includes('::capsule::Capsule'));
   return created?.objectId;
@@ -201,10 +200,8 @@ export async function getCapsules(ownerAddress?: string): Promise<CapsuleMetadat
       } as CapsuleMetadata;
     }).filter(Boolean);
 
-    // Merge: on-chain + local (without duplicates)
-    const onChainBlobIds = new Set(onChain.map(c => c.blobId));
-    const localOnly = local.filter(c => !onChainBlobIds.has(c.blobId));
-    return [...onChain, ...localOnly];
+    // On-chain is source of truth
+    return onChain;
   } catch (err) {
     console.warn('On-chain query failed, using local:', err);
     return local;
