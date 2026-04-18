@@ -8,21 +8,29 @@ const SYSTEM_PROMPT = `You are Marina, a friendly AI assistant on Sui blockchain
 
 Sui knowledge:
 - The smallest unit of SUI is MIST (1 SUI = 1,000,000,000 MIST)
-- Sui uses the Move language, object-centric model
-- Walrus is decentralized storage on Sui
-- Seal is threshold encryption on Sui
+- Sui uses the Move language with an object-centric model (every asset is an object with a unique ID)
+- Gas fees on Sui are very low (~0.003 SUI per transaction)
+- Sui supports staking SUI to validators for ~3-4% APY
+- Sui has native zkLogin: sign in with Google/Apple, no seed phrase needed
+- Move is a safe, resource-oriented language. Modules are published as packages on-chain.
+- Walrus is decentralized blob storage on Sui. Data is erasure-coded across storage nodes. Blobs have epoch-based expiry.
+- Seal is threshold encryption on Sui. Data is encrypted so that decryption requires approval from on-chain policy (time-lock, ownership, etc). Key servers hold shares.
+- zkLogin maps a Google/Apple account to a Sui address using zero-knowledge proofs. The address is deterministic from the OAuth provider + user ID.
+- Time Capsules: messages encrypted with Seal (time-lock), stored on Walrus, metadata on-chain. Only decryptable after unlock time.
 
 Capabilities:
-- Answer questions about Sui blockchain, Move, Walrus, Seal
+- Answer questions about Sui blockchain, Move, Walrus, Seal, zkLogin, staking, gas
+- Analyze transaction history: spending patterns, gas usage, activity summary
 - Assist with transactions: send SUI, create Time Capsule, check balance, view history
 - Find contacts in the address book
 
 Rules:
 - Reply in the language the user uses
-- Be concise (2-3 sentences)
+- Be concise (2-3 sentences max for voice, can be longer for text analysis)
 - When an action is needed, use tools
 - When sending SUI, always confirm with the user before calling the tool
-- Do NOT make up information. If you don't know, say you don't know.`;
+- Do NOT make up information. If you don't know, say you don't know.
+- Never read out loud wallet addresses or transaction hashes. Use short labels instead.`;
 
 const TOOLS = [
   {
@@ -108,7 +116,7 @@ async function executeTool(name: string, input: any, userAddress: string): Promi
         const result = await sendSui(recipientAddr, input.amount, userAddress);
         const recipientLabel = input.recipient.startsWith('0x') ? `wallet ending in ${recipientAddr.slice(-4)}` : input.recipient;
         if (result.success) return `Done! Sent ${input.amount} SUI to ${recipientLabel}.\nhttps://suiscan.xyz/testnet/tx/${result.digest}`;
-        return `Send failed: ${result.error}`;
+        return `Send failed. Please try again.`;
       }
       case 'create_capsule': {
         const { createCapsule } = await import('./capsule');
@@ -117,7 +125,7 @@ async function executeTool(name: string, input: any, userAddress: string): Promi
         if (input.recipient && input.recipient !== 'self') {
           if (input.recipient.startsWith('0x')) {
             recipientAddr = input.recipient;
-            recipientName = input.recipient.slice(0, 8) + '...';
+            recipientName = 'a specific wallet';
           } else {
             const { findByName } = await import('./contacts');
             const contact = await findByName(input.recipient, userAddress);
@@ -128,7 +136,7 @@ async function executeTool(name: string, input: any, userAddress: string): Promi
         }
         const unlockAt = new Date(Date.now() + input.unlockAfterMinutes * 60000);
         await createCapsule({ content: input.content, senderAddress: userAddress, recipientAddress: recipientAddr, recipientName, unlockAt });
-        return `Capsule created! Unlocks at ${unlockAt.toLocaleString('en-US')}`;
+        return `Capsule created for ${recipientName}! Unlocks at ${unlockAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}.`;
       }
       case 'find_contact': {
         const { findByName } = await import('./contacts');
@@ -138,9 +146,12 @@ async function executeTool(name: string, input: any, userAddress: string): Promi
       }
       case 'tx_history': {
         const { getTransactionHistory } = await import('./wallet');
-        const txs = await getTransactionHistory(userAddress, 5);
-        if (!txs.length) return 'No transactions yet';
-        return txs.map(tx => `${tx.txType} - ${tx.status} - ${tx.gasFee} SUI`).join('\n');
+        const txs = await getTransactionHistory(userAddress, 10);
+        if (!txs.length) return 'No transactions yet.';
+        const totalGas = txs.reduce((s, tx) => s + parseFloat(tx.gasFee || '0'), 0);
+        const types = txs.reduce((m: any, tx) => { m[tx.txType] = (m[tx.txType] || 0) + 1; return m; }, {});
+        const breakdown = Object.entries(types).map(([k, v]) => `${k}: ${v}`).join(', ');
+        return `Last ${txs.length} transactions: ${breakdown}. Total gas spent: ${totalGas.toFixed(4)} SUI. Ask me to analyze spending patterns, gas optimization, or anything else.`;
       }
       default:
         return `Tool "${name}" does not exist`;
