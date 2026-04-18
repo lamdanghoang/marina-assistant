@@ -1,0 +1,50 @@
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { colors, typography, spacing } from '../../constants/theme';
+
+interface Props {
+  content: string;
+  sender: 'user' | 'marina';
+  action?: { type: string; detail?: string; capsuleId?: string; txId?: string };
+}
+
+export const ChatBubble: React.FC<Props> = ({ content, sender, action }) => {
+  const isUser = sender === 'user';
+  return (
+    <View style={[styles.wrapper, isUser ? styles.wrapperUser : styles.wrapperMarina]}>
+      <Text style={styles.label}>{isUser ? 'YOU' : 'MARINA'}</Text>
+      <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleMarina]}>
+        <Text style={styles.text}>{content}</Text>
+        {action?.detail && (
+          <View style={styles.actionCard}>
+            <Text style={styles.actionLabel}>{action.type === 'balance' ? 'Available Balance' : 'Detail'}</Text>
+            <Text style={styles.actionValue}>{action.detail}</Text>
+          </View>
+        )}
+        {action?.capsuleId && (
+          <View style={styles.capsuleCard}>
+            <Text style={styles.capsuleTitle}>Capsule {action.capsuleId} Created</Text>
+            {action.txId && <Text style={styles.capsuleTx}>TXID: {action.txId}</Text>}
+          </View>
+        )}
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  wrapper: { maxWidth: '85%', gap: 4 },
+  wrapperUser: { alignSelf: 'flex-end', alignItems: 'flex-end' },
+  wrapperMarina: { alignSelf: 'flex-start', alignItems: 'flex-start' },
+  label: { fontSize: typography.sizes.xs, letterSpacing: typography.tracking.widest, color: colors.onSurfaceVariant, opacity: 0.7, marginHorizontal: 4 },
+  bubble: { padding: spacing.lg, borderRadius: 16, borderWidth: 1 },
+  bubbleUser: { backgroundColor: 'rgba(0,238,252,0.1)', borderColor: 'rgba(0,238,252,0.2)', borderTopRightRadius: 4 },
+  bubbleMarina: { backgroundColor: colors.glass, borderColor: colors.glassBorder, borderTopLeftRadius: 4 },
+  text: { fontSize: typography.sizes.md, lineHeight: 22, color: colors.onSurface },
+  actionCard: { marginTop: spacing.md, backgroundColor: colors.surfaceContainerLow, padding: spacing.md, borderRadius: 8, borderWidth: 1, borderColor: colors.glassBorder },
+  actionLabel: { fontSize: typography.sizes.xs, color: colors.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: typography.tracking.wider },
+  actionValue: { fontSize: typography.sizes.md, fontWeight: typography.weights.bold, color: colors.onSurface, marginTop: 2 },
+  capsuleCard: { marginTop: spacing.lg, backgroundColor: 'rgba(143,245,255,0.05)', padding: spacing.lg, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(143,245,255,0.2)' },
+  capsuleTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.bold, color: colors.primary },
+  capsuleTx: { fontSize: typography.sizes.xs, color: 'rgba(143,245,255,0.6)', marginTop: 4 },
+});
