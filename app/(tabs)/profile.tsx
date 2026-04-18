@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Droplets, Database, ArrowUpRight, ArrowDownLeft, RefreshCw, ChevronRight, Bell, ShieldCheck } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius } from '../../src/constants/theme';
 import { GlassPanel } from '../../src/components/shared/GlassPanel';
+import { Skeleton } from '../../src/components/shared/Skeleton';
 import { useAppStore } from '../../src/store/appStore';
 import { logout } from '../../src/services/auth';
 import type { Contact } from '../../src/types';
@@ -69,7 +70,8 @@ export default function ProfileScreen() {
           <View style={styles.portfolioHeader}>
             <View>
               <Text style={styles.sectionLabel}>TOTAL PORTFOLIO VALUE</Text>
-              <Text style={styles.portfolioValue}>{balance ?? '...'} SUI</Text>
+              <Text style={styles.portfolioValue}>{balance ?? ''}</Text>
+              {!balance && <Skeleton width={180} height={40} borderRadius={8} />}
             </View>
             <TouchableOpacity>
               <ChevronRight size={20} color={colors.primary} />
@@ -91,7 +93,11 @@ export default function ProfileScreen() {
       </View>
       <GlassPanel style={styles.txList}>
         {loadingTx ? (
-          <Text style={styles.emptyText}>Loading...</Text>
+          <View style={{ padding: spacing.xl, gap: spacing.md }}>
+            <Skeleton width="100%" height={48} />
+            <Skeleton width="100%" height={48} />
+            <Skeleton width="80%" height={48} />
+          </View>
         ) : txs.length === 0 ? (
           <Text style={styles.emptyText}>No transactions yet</Text>
         ) : txs.map((tx: any, i: number) => (

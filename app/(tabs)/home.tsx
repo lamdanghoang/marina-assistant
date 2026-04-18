@@ -6,6 +6,7 @@ import { Mic, Droplets, Square } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius } from '../../src/constants/theme';
 import { GlassPanel } from '../../src/components/shared/GlassPanel';
 import { PulseRings } from '../../src/components/shared/PulseRings';
+import { Skeleton } from '../../src/components/shared/Skeleton';
 import { useAppStore } from '../../src/store/appStore';
 import { sendMessage, createMessage } from '../../src/services/chat';
 import { speak, startListening, stopListening } from '../../src/services/voice';
@@ -71,7 +72,7 @@ export default function HomeScreen() {
           <View style={styles.avatar}><Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmFeGsPnMllH0l1nFInGBj-qHptCJ8WngJ8kUxJVNPZ7dplrE2yMjghAIMlqj568baN2o_xzAQElwMaU5TfElbWdPbY-N8dU3hZehrSWLQg7xUURdufYJtMEswe0FofA6kIYa_HoVPDlahzMzNUzjyN7YgrqnQcVs4bBhCcg80FSBwLCvRc5Lam1xoZOvnFe6qdxifymPYxBSS6jw65UIhqrOncqCbDM34aavL_nXM2g29kHjbd5_OzucX1MRYUQ9Vhqc7WwS8SJQ' }} style={{ width: '100%', height: '100%' }} /></View>
           <Text style={styles.addr}>{truncAddr(session?.walletAddress ?? '')}</Text>
         </View>
-        <View style={styles.pill}><Droplets size={14} color={colors.primary} /><Text style={styles.pillText}>{balance ?? '...'} SUI</Text></View>
+        <View style={styles.pill}><Droplets size={14} color={colors.primary} />{balance ? <Text style={styles.pillText}>{balance} SUI</Text> : <Skeleton width={60} height={16} borderRadius={4} />}</View>
       </View>
 
       <View style={styles.center}>
