@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Image, StyleSheet, Animated } from 'react-native';
 
-// Sprite sheets: 4 columns x 2 rows = 8 frames per sheet
+// Sprite sheets: 4 columns x 2 rows
+// Each frame: 688x768px → sheet: 2752x1536px
 const COLS = 4;
 const ROWS = 2;
 const TOTAL_FRAMES = COLS * ROWS;
+const FRAME_ASPECT = 768 / 688; // h/w ratio
 
 // Animation sets — each action has multiple sprite sheets, picked randomly
 const ANIMATIONS: Record<string, any[]> = {
@@ -79,12 +81,12 @@ export const SpriteCharacter: React.FC<Props> = ({ animation, size = 300, fps = 
   if (!sheet) return null;
 
   const frameW = size;
-  const frameH = size;
+  const frameH = size * FRAME_ASPECT;
   const col = frame % COLS;
   const row = Math.floor(frame / COLS);
 
   return (
-    <View style={[styles.container, { width: frameW, height: frameH, overflow: 'hidden' }]}>
+    <View style={{ width: frameW, height: frameH, overflow: 'hidden' }}>
       <Image
         source={sheet}
         style={{

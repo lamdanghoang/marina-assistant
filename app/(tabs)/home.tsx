@@ -7,10 +7,11 @@ import { colors, typography, spacing, borderRadius } from '../../src/constants/t
 import { GlassPanel } from '../../src/components/shared/GlassPanel';
 import { PulseRings } from '../../src/components/shared/PulseRings';
 import { Skeleton } from '../../src/components/shared/Skeleton';
-import { SpriteCharacter } from '../../src/components/3d/SpriteCharacter';
+
 import { useAppStore } from '../../src/store/appStore';
 import { sendMessage, createMessage } from '../../src/services/chat';
 import { speak, startListening, stopListening } from '../../src/services/voice';
+import { SpriteCharacter } from '../../src/components/2d/SpriteCharacter';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -78,17 +79,20 @@ export default function HomeScreen() {
         <View style={styles.pill}><Droplets size={14} color={colors.primary} />{balance ? <Text style={styles.pillText}>{parseFloat(balance).toFixed(2)} SUI</Text> : <Skeleton width={56} height={14} borderRadius={4} />}</View>
       </View>
 
+      {/* Bubble — above character */}
+      <TouchableOpacity onPress={() => router.push('/(tabs)/chat')} activeOpacity={0.8} style={styles.bubbleWrap}>
+        <GlassPanel style={styles.bubble}>
+          <Text style={styles.bubbleLabel}>{listening ? 'YOU' : 'MARINA'}</Text>
+          <Text style={styles.bubbleText} numberOfLines={3}>{msg}</Text>
+          {msg.length > 120 && <Text style={styles.more}>View in Chat →</Text>}
+        </GlassPanel>
+      </TouchableOpacity>
+
+      {/* Character */}
       <View style={styles.center}>
         <View style={styles.glow} />
         <TouchableOpacity onPress={() => setCharAnim(charAnim === 'idle' ? 'interact' : 'idle')} activeOpacity={0.9}>
-          <SpriteCharacter animation={charAnim} size={SW * 0.7} fps={6} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/chat')} activeOpacity={0.8}>
-          <GlassPanel style={styles.bubble}>
-            <Text style={styles.bubbleLabel}>{listening ? 'YOU' : 'MARINA'}</Text>
-            <Text style={styles.bubbleText} numberOfLines={4}>{msg}</Text>
-            {msg.length > 120 && <Text style={styles.more}>View in Chat →</Text>}
-          </GlassPanel>
+          <SpriteCharacter animation={charAnim} size={SW * 0.95} fps={6} />
         </TouchableOpacity>
       </View>
 
@@ -118,7 +122,8 @@ const styles = StyleSheet.create({
   pillText: { fontSize: typography.sizes.md, fontWeight: typography.weights.bold, color: colors.primary },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   glow: { position: 'absolute', width: 400, height: 400, borderRadius: 200, backgroundColor: 'rgba(143,245,255,0.03)' },
-  bubble: { position: 'absolute', top: '8%', right: spacing.xl, maxWidth: 200, padding: spacing.lg, borderRadius: 16, borderTopLeftRadius: 4 },
+  bubbleWrap: { paddingHorizontal: spacing.xl, alignSelf: 'flex-end', marginRight: spacing.md, zIndex: 1 },
+  bubble: { maxWidth: 220, padding: spacing.lg, borderRadius: 16, borderTopLeftRadius: 4 },
   bubbleLabel: { fontSize: typography.sizes.xs, letterSpacing: 3, color: colors.primary, fontWeight: typography.weights.bold, marginBottom: 4 },
   bubbleText: { fontSize: typography.sizes.md, lineHeight: 20, color: colors.onSurface },
   more: { color: colors.primary, fontSize: typography.sizes.xs, marginTop: spacing.sm },
