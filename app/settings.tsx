@@ -17,6 +17,8 @@ export default function SettingsScreen() {
   const setLanguage = useAppStore((s) => s.setLanguage);
   const voiceEnabled = useAppStore((s) => s.voiceEnabled);
   const setVoiceEnabled = useAppStore((s) => s.setVoiceEnabled);
+  const [sealEnabled, setSealEnabled] = React.useState(true);
+  const [notifEnabled, setNotifEnabled] = React.useState(true);
 
   const handleLogout = () => Alert.alert('Disconnect', 'Are you sure?', [
     { text: 'Cancel', style: 'cancel' },
@@ -33,13 +35,13 @@ export default function SettingsScreen() {
       <GlassPanel style={styles.section}>
         <View style={styles.item}>
           <View style={[styles.itemIcon, { backgroundColor: 'rgba(143,245,255,0.1)' }]}><Bell size={18} color={colors.primary} /></View>
-          <View style={{ flex: 1 }}><Text style={styles.itemTitle}>Notifications</Text><Text style={styles.itemSub}>PUSH & ALERTS</Text></View>
-          <ChevronRight size={16} color={colors.onSurfaceVariant} />
+          <View style={{ flex: 1 }}><Text style={styles.itemTitle}>Notifications</Text><Text style={styles.itemSub}>{notifEnabled ? 'PUSH & ALERTS' : 'DISABLED'}</Text></View>
+          <Switch value={notifEnabled} onValueChange={setNotifEnabled} trackColor={{ true: 'rgba(143,245,255,0.4)', false: colors.surfaceContainerHighest }} thumbColor={'#fff'} ios_backgroundColor={colors.surfaceContainerHighest} />
         </View>
         <View style={styles.item}>
           <View style={[styles.itemIcon, { backgroundColor: 'rgba(90,248,251,0.1)' }]}><ShieldCheck size={18} color={colors.secondary} /></View>
-          <View style={{ flex: 1 }}><Text style={styles.itemTitle}>Seal Cryptography</Text><Text style={styles.itemSub}>ACTIVE</Text></View>
-          <Switch value={true} trackColor={{ true: colors.primary, false: colors.surfaceContainerHighest }} thumbColor={colors.surface} />
+          <View style={{ flex: 1 }}><Text style={styles.itemTitle}>Seal Cryptography</Text><Text style={styles.itemSub}>{sealEnabled ? 'ACTIVE' : 'DISABLED'}</Text></View>
+          <Switch value={sealEnabled} onValueChange={setSealEnabled} trackColor={{ true: 'rgba(143,245,255,0.4)', false: colors.surfaceContainerHighest }} thumbColor={'#fff'} ios_backgroundColor={colors.surfaceContainerHighest} />
         </View>
       </GlassPanel>
 
@@ -50,7 +52,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
         <View style={styles.item}>
           <View style={{ flex: 1 }}><Text style={styles.itemTitle}>Voice Response</Text><Text style={styles.itemSub}>{voiceEnabled ? 'ENABLED' : 'DISABLED'}</Text></View>
-          <Switch value={voiceEnabled} onValueChange={setVoiceEnabled} trackColor={{ true: colors.primary, false: colors.surfaceContainerHighest }} thumbColor={colors.surface} />
+          <Switch value={voiceEnabled} onValueChange={setVoiceEnabled} trackColor={{ true: 'rgba(143,245,255,0.4)', false: colors.surfaceContainerHighest }} thumbColor={'#fff'} ios_backgroundColor={colors.surfaceContainerHighest} />
         </View>
         <View style={styles.item}>
           <View style={{ flex: 1 }}><Text style={styles.itemTitle}>Network</Text><Text style={styles.itemSub}>TESTNET</Text></View>
@@ -58,15 +60,6 @@ export default function SettingsScreen() {
         </View>
       </GlassPanel>
 
-      <GlassPanel style={styles.section}>
-        <View style={styles.item}>
-          <View style={{ flex: 1 }}><Text style={styles.itemTitle}>Account</Text><Text style={styles.itemSub}>{session?.authMethod?.toUpperCase()} • {session?.walletAddress?.slice(0, 10)}...</Text></View>
-        </View>
-      </GlassPanel>
-
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-        <Text style={styles.logoutText}>DISCONNECT WALLET</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Mic, Droplets, Square } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius } from '../../src/constants/theme';
 import { GlassPanel } from '../../src/components/shared/GlassPanel';
@@ -29,11 +29,7 @@ export default function HomeScreen() {
   const [charAnim, setCharAnim] = useState('idle');
   const [msg, setMsg] = useState('Good morning, Traveler. The Sui network is calm today. How can I assist you?');
 
-  useEffect(() => {
-    if (session?.walletAddress && !balance) {
-      import('../../src/services/wallet').then(({ getBalance }) => getBalance(session.walletAddress).then(setBalance));
-    }
-  }, [session?.walletAddress]);
+  // Balance from global polling (in _layout.tsx)
 
   const truncAddr = (a: string) => a ? `${a.slice(0, 4)}...${a.slice(-4)}` : '';
 

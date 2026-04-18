@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
-import { Droplets, Database, ArrowUpRight, ArrowDownLeft, RefreshCw, ChevronRight, Bell, ShieldCheck, Copy } from 'lucide-react-native';
+import { Droplets, Database, ArrowUpRight, ArrowDownLeft, RefreshCw, ChevronRight, Bell, ShieldCheck, Copy, Settings } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius } from '../../src/constants/theme';
 import { GlassPanel } from '../../src/components/shared/GlassPanel';
 import { Skeleton } from '../../src/components/shared/Skeleton';
@@ -55,6 +55,9 @@ export default function ProfileScreen() {
     <ScrollView style={[styles.container, { paddingTop: insets.top + spacing.md }]} contentContainerStyle={{ paddingBottom: 120 }}>
       {/* Avatar card */}
       <GlassPanel style={styles.avatarCard}>
+        <TouchableOpacity style={styles.settingsBtn} onPress={() => router.push('/settings')}>
+          <Settings size={18} color={colors.primary} />
+        </TouchableOpacity>
         <View style={styles.avatarFrame}>
           <View style={styles.avatarInner}>
             <Text style={{ fontSize: 40 }}>🧑‍🚀</Text>
@@ -144,32 +147,6 @@ export default function ProfileScreen() {
             ))}
           </GlassPanel>
         </View>
-
-        <View style={styles.bottomCol}>
-          <Text style={[styles.sectionTitle, { marginBottom: spacing.md, marginLeft: 4 }]}>System Config</Text>
-          <GlassPanel style={styles.configList}>
-            <TouchableOpacity style={styles.configItem}>
-              <View style={[styles.configIcon, { backgroundColor: 'rgba(143,245,255,0.1)' }]}>
-                <Bell size={18} color={colors.primary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.configTitle}>Notifications</Text>
-                <Text style={styles.configSub}>PUSH & ALERTS</Text>
-              </View>
-              <ChevronRight size={16} color={colors.onSurfaceVariant} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.configItem}>
-              <View style={[styles.configIcon, { backgroundColor: 'rgba(90,248,251,0.1)' }]}>
-                <ShieldCheck size={18} color={colors.secondary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.configTitle}>Seal Cryptography</Text>
-                <Text style={styles.configSub}>ACTIVE</Text>
-              </View>
-              <View style={styles.toggle}><View style={styles.toggleDot} /></View>
-            </TouchableOpacity>
-          </GlassPanel>
-        </View>
       </View>
 
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
@@ -256,5 +233,6 @@ const styles = StyleSheet.create({
   toggleDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: colors.surface, marginRight: 2 },
   logoutBtn: { alignItems: 'center', padding: spacing.xl, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: 'rgba(255,113,108,0.3)', marginTop: spacing.md },
   logoutText: { color: colors.error, fontSize: typography.sizes.sm, fontWeight: typography.weights.bold, letterSpacing: 3 },
+  settingsBtn: { position: 'absolute', top: spacing.md, right: spacing.md, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surfaceContainer, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
   emptyText: { color: colors.onSurfaceVariant, fontSize: typography.sizes.sm, textAlign: 'center', padding: spacing.xl },
 });

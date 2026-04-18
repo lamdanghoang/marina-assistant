@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Linking, TouchableOpacity } from 'react-native';
 import { colors, typography, spacing } from '../../constants/theme';
 
 interface Props {
@@ -8,13 +8,25 @@ interface Props {
   action?: { type: string; detail?: string; capsuleId?: string; txId?: string };
 }
 
+const renderContent = (text: string) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  return parts.map((part, i) =>
+    urlRegex.test(part) ? (
+      <Text key={i} style={styles.link} onPress={() => Linking.openURL(part)}>View on Explorer ↗</Text>
+    ) : (
+      <Text key={i}>{part}</Text>
+    )
+  );
+};
+
 export const ChatBubble: React.FC<Props> = ({ content, sender, action }) => {
   const isUser = sender === 'user';
   return (
     <View style={[styles.wrapper, isUser ? styles.wrapperUser : styles.wrapperMarina]}>
       <Text style={styles.label}>{isUser ? 'YOU' : 'MARINA'}</Text>
       <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleMarina]}>
-        <Text style={styles.text}>{content}</Text>
+        <Text style={styles.text}>{renderContent(content)}</Text>
         {action?.detail && (
           <View style={styles.actionCard}>
             <Text style={styles.actionLabel}>{action.type === 'balance' ? 'Available Balance' : 'Detail'}</Text>
@@ -41,6 +53,7 @@ const styles = StyleSheet.create({
   bubbleUser: { backgroundColor: 'rgba(0,238,252,0.1)', borderColor: 'rgba(0,238,252,0.2)', borderTopRightRadius: 4 },
   bubbleMarina: { backgroundColor: colors.glass, borderColor: colors.glassBorder, borderTopLeftRadius: 4 },
   text: { fontSize: typography.sizes.md, lineHeight: 22, color: colors.onSurface },
+  link: { color: colors.primary, textDecorationLine: 'underline' },
   actionCard: { marginTop: spacing.md, backgroundColor: colors.surfaceContainerLow, padding: spacing.md, borderRadius: 8, borderWidth: 1, borderColor: colors.glassBorder },
   actionLabel: { fontSize: typography.sizes.xs, color: colors.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: typography.tracking.wider },
   actionValue: { fontSize: typography.sizes.md, fontWeight: typography.weights.bold, color: colors.onSurface, marginTop: 2 },

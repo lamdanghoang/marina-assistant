@@ -100,13 +100,14 @@ async function executeTool(name: string, input: any, userAddress: string): Promi
         let recipientAddr = input.recipient;
         if (!recipientAddr.startsWith('0x')) {
           const { findByName } = await import('./contacts');
-          const contact = await findByName(recipientAddr);
+          const contact = await findByName(recipientAddr, userAddress);
           if (!contact) return `"${input.recipient}" not found in address book`;
           recipientAddr = contact.walletAddress;
         }
         const { sendSui } = await import('./wallet');
         const result = await sendSui(recipientAddr, input.amount, userAddress);
-        if (result.success) return `Successfully sent ${input.amount} SUI! TX: ${result.digest}`;
+        const recipientLabel = input.recipient.startsWith('0x') ? `wallet ending in ${recipientAddr.slice(-4)}` : input.recipient;
+        if (result.success) return `Done! Sent ${input.amount} SUI to ${recipientLabel}.\nhttps://suiscan.xyz/testnet/tx/${result.digest}`;
         return `Send failed: ${result.error}`;
       }
       case 'create_capsule': {
@@ -119,7 +120,7 @@ async function executeTool(name: string, input: any, userAddress: string): Promi
             recipientName = input.recipient.slice(0, 8) + '...';
           } else {
             const { findByName } = await import('./contacts');
-            const contact = await findByName(input.recipient);
+            const contact = await findByName(input.recipient, userAddress);
             if (!contact) return `"${input.recipient}" not found in address book`;
             recipientAddr = contact.walletAddress;
             recipientName = contact.name;
@@ -131,9 +132,9 @@ async function executeTool(name: string, input: any, userAddress: string): Promi
       }
       case 'find_contact': {
         const { findByName } = await import('./contacts');
-        const contact = await findByName(input.name);
+        const contact = await findByName(input.name, userAddress);
         if (!contact) return `"${input.name}" not found`;
-        return `${contact.name}: ${contact.walletAddress}`;
+        return `Found ${contact.name} (wallet ...${contact.walletAddress.slice(-4)})`;
       }
       case 'tx_history': {
         const { getTransactionHistory } = await import('./wallet');

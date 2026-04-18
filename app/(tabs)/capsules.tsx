@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -11,6 +11,8 @@ import { useAppStore } from '../../src/store/appStore';
 import { getCapsules, isLocked, timeUntilUnlock } from '../../src/services/capsule';
 import type { Capsule } from '../../src/types';
 
+import { useFocusEffect } from 'expo-router';
+
 export default function CapsulesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -18,9 +20,14 @@ export default function CapsulesScreen() {
   const [capsules, setCapsules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    getCapsules(session?.walletAddress).then(c => { setCapsules(c); setLoading(false); });
+  const fetchCapsules = useCallback(() => {
+    if (session?.walletAddress) {
+      getCapsules(session.walletAddress).then(c => { setCapsules(c); setLoading(false); });
+    }
   }, [session?.walletAddress]);
+
+  // Refetch every time screen is focused
+  useFocusEffect(fetchCapsules);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
