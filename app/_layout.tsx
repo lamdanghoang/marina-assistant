@@ -14,6 +14,7 @@ export default function RootLayout() {
   const segments = useSegments();
 
   useEffect(() => {
+    useAppStore.getState().loadPreferences();
     loadSession().then((s) => { setSession(s); setReady(true); });
   }, []);
 

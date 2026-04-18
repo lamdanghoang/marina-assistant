@@ -1,29 +1,22 @@
 import { create } from 'zustand';
+import * as SecureStore from 'expo-secure-store';
 import type { AuthSession, ChatMessage, CharacterAnimation, SupportedLanguage } from '../types';
 
 interface AppState {
-  // Auth
   session: AuthSession | null;
   setSession: (s: AuthSession | null) => void;
-
-  // Chat
   chatMessages: ChatMessage[];
   addChatMessage: (m: ChatMessage) => void;
   clearChat: () => void;
-
-  // Preferences
   language: SupportedLanguage;
   setLanguage: (l: SupportedLanguage) => void;
   voiceEnabled: boolean;
   setVoiceEnabled: (v: boolean) => void;
-
-  // Animation
   animation: CharacterAnimation;
   setAnimation: (a: CharacterAnimation) => void;
-
-  // Wallet cache
   balance: string | null;
   setBalance: (b: string) => void;
+  loadPreferences: () => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -35,13 +28,28 @@ export const useAppStore = create<AppState>((set) => ({
   clearChat: () => set({ chatMessages: [] }),
 
   language: 'en-US',
-  setLanguage: (language) => set({ language }),
+  setLanguage: (language) => {
+    set({ language });
+    SecureStore.setItemAsync('marina_language', language).catch(() => {});
+  },
   voiceEnabled: true,
-  setVoiceEnabled: (voiceEnabled) => set({ voiceEnabled }),
+  setVoiceEnabled: (voiceEnabled) => {
+    set({ voiceEnabled });
+    SecureStore.setItemAsync('marina_voice', voiceEnabled ? '1' : '0').catch(() => {});
+  },
 
   animation: 'idle',
   setAnimation: (animation) => set({ animation }),
 
   balance: null,
   setBalance: (balance) => set({ balance }),
+
+  loadPreferences: async () => {
+    const lang = await SecureStore.getItemAsync('marina_language');
+    const voice = await SecureStore.getItemAsync('marina_voice');
+    set({
+      language: (lang as SupportedLanguage) || 'en-US',
+      voiceEnabled: voice !== '0',
+    });
+  },
 }));

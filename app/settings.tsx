@@ -46,10 +46,17 @@ export default function SettingsScreen() {
       </GlassPanel>
 
       <GlassPanel style={styles.section}>
-        <TouchableOpacity style={styles.item} onPress={() => setLanguage(language === 'en-US' ? 'vi-VN' : 'en-US')}>
-          <View style={{ flex: 1 }}><Text style={styles.itemTitle}>Language</Text><Text style={styles.itemSub}>{language === 'en-US' ? 'ENGLISH' : 'VIETNAMESE'}</Text></View>
-          <ChevronRight size={16} color={colors.onSurfaceVariant} />
-        </TouchableOpacity>
+        <View style={styles.item}>
+          <View style={{ flex: 1 }}><Text style={styles.itemTitle}>Language</Text><Text style={styles.itemSub}>STT & TTS</Text></View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity onPress={() => setLanguage('en-US')} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: language === 'en-US' ? 'rgba(143,245,255,0.3)' : colors.surfaceContainerHighest }}>
+              <Text style={{ color: language === 'en-US' ? colors.primary : colors.onSurfaceVariant, fontSize: 13, fontWeight: '600' }}>EN</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setLanguage('vi-VN')} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: language === 'vi-VN' ? 'rgba(143,245,255,0.3)' : colors.surfaceContainerHighest }}>
+              <Text style={{ color: language === 'vi-VN' ? colors.primary : colors.onSurfaceVariant, fontSize: 13, fontWeight: '600' }}>VI</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
         <View style={styles.item}>
           <View style={{ flex: 1 }}><Text style={styles.itemTitle}>Voice Response</Text><Text style={styles.itemSub}>{voiceEnabled ? 'ENABLED' : 'DISABLED'}</Text></View>
           <Switch value={voiceEnabled} onValueChange={setVoiceEnabled} trackColor={{ true: 'rgba(143,245,255,0.4)', false: colors.surfaceContainerHighest }} thumbColor={'#fff'} ios_backgroundColor={colors.surfaceContainerHighest} />

@@ -7,7 +7,25 @@ export async function speak(text: string, language: SupportedLanguage): Promise<
   // Strip emojis for TTS (keep in chat UI)
   let processed = text.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim();
   if (language === 'vi-VN') {
-    processed = processed.replace(/\bAI\b/g, 'ây ai');
+    const viReplacements: [RegExp, string][] = [
+      [/\bAI\b/g, 'ây ai'],
+      [/\bSUI\b/gi, 'xui'],
+      [/\bSeal\b/gi, 'xiu'],
+      [/\bWalrus\b/gi, 'wol-rớt'],
+      [/\bzkLogin\b/gi, 'zi cây lốc gin'],
+      [/\bMove\b/g, 'muv'],
+      [/\bMIST\b/g, 'mít'],
+      [/\bAPY\b/g, 'ây pi ai'],
+      [/\bgas\b/gi, 'gát'],
+      [/\bstaking\b/gi, 'stây-king'],
+      [/\bblockchain\b/gi, 'blóc-chên'],
+      [/\btransaction\b/gi, 'tran-zắc-sần'],
+      [/\bwallet\b/gi, 'wol-lét'],
+      [/\bcapsule\b/gi, 'cap-xiu'],
+    ];
+    for (const [regex, replacement] of viReplacements) {
+      processed = processed.replace(regex, replacement);
+    }
   }
 
   return new Promise((resolve) => {

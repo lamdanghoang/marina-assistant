@@ -26,11 +26,13 @@ Capabilities:
 
 Rules:
 - Reply in the language the user uses
-- Be concise (2-3 sentences max for voice, can be longer for text analysis)
+- Be concise (1-2 sentences). Only give longer answers if the user explicitly asks for details.
+- Respond like a voice assistant — short, natural, conversational.
 - When an action is needed, use tools
 - When sending SUI, always confirm with the user before calling the tool
 - Do NOT make up information. If you don't know, say you don't know.
-- Never read out loud wallet addresses or transaction hashes. Use short labels instead.`;
+- Never read out loud wallet addresses or transaction hashes. Use short labels instead.
+- Users may use voice input with imperfect pronunciation. Infer intent from context even if words are misspelled or unclear. For example: "sen suy" = "send SUI", "capsun" = "capsule", "balan" = "balance", "worus" = "walrus".`;
 
 const TOOLS = [
   {
@@ -247,7 +249,7 @@ async function callBedrock(messages: any[], userAddress: string) {
       messages,
       system: [{ text: systemText }],
       toolConfig: { tools: TOOLS },
-      inferenceConfig: { maxTokens: 500 },
+      inferenceConfig: { maxTokens: 200 },
     }),
   });
 
