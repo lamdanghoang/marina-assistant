@@ -23,8 +23,8 @@ export async function scheduleCapsuleUnlock(capsule: CapsuleMetadata): Promise<v
   await Notifications.scheduleNotificationAsync({
     identifier: `capsule-unlock-${capsule.id}`,
     content: {
-      title: '🔓 Capsule đã mở khóa!',
-      body: `Capsule cho ${capsule.recipientName} đã đến lúc mở. Nhấn để xem!`,
+      title: '🔓 Capsule unlocked!',
+      body: `Capsule for ${capsule.recipientName} is ready to open. Tap to view!`,
       data: { capsuleId: capsule.id },
     },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(unlockTime) },
@@ -34,8 +34,8 @@ export async function scheduleCapsuleUnlock(capsule: CapsuleMetadata): Promise<v
 export async function scheduleCapsuleReceived(senderName: string, capsuleId: string): Promise<void> {
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: '💊 Bạn nhận được Time Capsule!',
-      body: `${senderName} đã gửi cho bạn một Time Capsule.`,
+      title: '💊 You received a Time Capsule!',
+      body: `${senderName} sent you a Time Capsule.`,
       data: { capsuleId },
     },
     trigger: null, // immediate

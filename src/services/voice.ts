@@ -42,14 +42,14 @@ export async function startListening(
 
     const available = await ExpoSpeechRecognitionModule.isRecognitionAvailable();
     if (!available) {
-      onError?.('Speech recognition không khả dụng trên thiết bị này');
+      onError?.('Speech recognition is not available on this device');
       return;
     }
 
     // Request permission
     const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
     if (!granted) {
-      onError?.('Cần quyền truy cập microphone');
+      onError?.('Microphone permission required');
       return;
     }
 
@@ -59,7 +59,7 @@ export async function startListening(
       continuous: false,
     });
   } catch (err) {
-    onError?.(err instanceof Error ? err.message : 'STT không khả dụng');
+    onError?.(err instanceof Error ? err.message : 'STT not available');
   }
 }
 

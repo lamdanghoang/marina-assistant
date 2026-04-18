@@ -4,37 +4,37 @@ const BEDROCK_API_KEY = process.env.EXPO_PUBLIC_BEDROCK_API_KEY || '';
 const BEDROCK_MODEL_ARN = 'arn:aws:bedrock:us-east-1:269825206069:inference-profile/global.anthropic.claude-sonnet-4-5-20250929-v1:0';
 const BEDROCK_URL = `https://bedrock-runtime.us-east-1.amazonaws.com/model/${encodeURIComponent(BEDROCK_MODEL_ARN)}/converse`;
 
-const SYSTEM_PROMPT = `Bạn là Marina, trợ lý AI thân thiện trên Sui blockchain. Tính cách: vui vẻ, nhiệt tình, nói ngắn gọn.
+const SYSTEM_PROMPT = `You are Marina, a friendly AI assistant on Sui blockchain. Personality: cheerful, enthusiastic, concise.
 
-Kiến thức Sui:
-- Đơn vị nhỏ nhất của SUI là MIST (1 SUI = 1,000,000,000 MIST)
-- Sui dùng ngôn ngữ Move, object-centric model
-- Walrus là decentralized storage trên Sui
-- Seal là threshold encryption trên Sui
+Sui knowledge:
+- The smallest unit of SUI is MIST (1 SUI = 1,000,000,000 MIST)
+- Sui uses the Move language, object-centric model
+- Walrus is decentralized storage on Sui
+- Seal is threshold encryption on Sui
 
-Khả năng:
-- Trả lời câu hỏi về Sui blockchain, Move, Walrus, Seal
-- Hỗ trợ giao dịch: gửi SUI, tạo Time Capsule, xem số dư, xem lịch sử
-- Tìm liên hệ trong danh bạ
+Capabilities:
+- Answer questions about Sui blockchain, Move, Walrus, Seal
+- Assist with transactions: send SUI, create Time Capsule, check balance, view history
+- Find contacts in the address book
 
-Quy tắc:
-- Trả lời bằng ngôn ngữ người dùng sử dụng
-- Ngắn gọn (2-3 câu)
-- Khi cần thực hiện hành động, dùng tools
-- Khi gửi SUI, luôn xác nhận với user trước khi gọi tool
-- KHÔNG bịa thông tin. Nếu không biết, nói không biết.`;
+Rules:
+- Reply in the language the user uses
+- Be concise (2-3 sentences)
+- When an action is needed, use tools
+- When sending SUI, always confirm with the user before calling the tool
+- Do NOT make up information. If you don't know, say you don't know.`;
 
 const TOOLS = [
   {
     toolSpec: {
       name: 'send_sui',
-      description: 'Gửi SUI cho người khác. Luôn xác nhận với user trước khi gọi.',
+      description: 'Send SUI to someone. Always confirm with the user before calling.',
       inputSchema: {
         json: {
           type: 'object',
           properties: {
-            recipient: { type: 'string', description: 'Tên (từ danh bạ) hoặc địa chỉ Sui (0x...)' },
-            amount: { type: 'number', description: 'Số lượng SUI' },
+            recipient: { type: 'string', description: 'Name (from address book) or Sui address (0x...)' },
+            amount: { type: 'number', description: 'Amount of SUI' },
           },
           required: ['recipient', 'amount'],
         },
@@ -44,21 +44,21 @@ const TOOLS = [
   {
     toolSpec: {
       name: 'check_balance',
-      description: 'Xem số dư SUI của user',
+      description: 'Check user\'s SUI balance',
       inputSchema: { json: { type: 'object', properties: {} } },
     },
   },
   {
     toolSpec: {
       name: 'create_capsule',
-      description: 'Tạo Time Capsule mã hóa bằng Seal, lưu trên Walrus',
+      description: 'Create a Time Capsule encrypted with Seal, stored on Walrus',
       inputSchema: {
         json: {
           type: 'object',
           properties: {
-            content: { type: 'string', description: 'Nội dung capsule' },
-            recipient: { type: 'string', description: 'Tên hoặc address người nhận. "self" nếu gửi cho bản thân' },
-            unlockAfterMinutes: { type: 'number', description: 'Số phút sau để mở khóa' },
+            content: { type: 'string', description: 'Capsule content' },
+            recipient: { type: 'string', description: 'Name or address of recipient. "self" if sending to yourself' },
+            unlockAfterMinutes: { type: 'number', description: 'Minutes until unlock' },
           },
           required: ['content', 'unlockAfterMinutes'],
         },
@@ -68,11 +68,11 @@ const TOOLS = [
   {
     toolSpec: {
       name: 'find_contact',
-      description: 'Tìm liên hệ trong danh bạ theo tên',
+      description: 'Find a contact in the address book by name',
       inputSchema: {
         json: {
           type: 'object',
-          properties: { name: { type: 'string', description: 'Tên cần tìm' } },
+          properties: { name: { type: 'string', description: 'Name to search for' } },
           required: ['name'],
         },
       },
@@ -81,7 +81,7 @@ const TOOLS = [
   {
     toolSpec: {
       name: 'tx_history',
-      description: 'Xem lịch sử giao dịch gần đây',
+      description: 'View recent transaction history',
       inputSchema: { json: { type: 'object', properties: {} } },
     },
   },
@@ -94,25 +94,25 @@ async function executeTool(name: string, input: any, userAddress: string): Promi
       case 'check_balance': {
         const { getBalance } = await import('./wallet');
         const balance = await getBalance(userAddress);
-        return `Số dư: ${balance} SUI`;
+        return `Balance: ${balance} SUI`;
       }
       case 'send_sui': {
         let recipientAddr = input.recipient;
         if (!recipientAddr.startsWith('0x')) {
           const { findByName } = await import('./contacts');
           const contact = await findByName(recipientAddr);
-          if (!contact) return `Không tìm thấy "${input.recipient}" trong danh bạ`;
+          if (!contact) return `"${input.recipient}" not found in address book`;
           recipientAddr = contact.walletAddress;
         }
         const { sendSui } = await import('./wallet');
         const result = await sendSui(recipientAddr, input.amount, userAddress);
-        if (result.success) return `Đã gửi ${input.amount} SUI thành công! TX: ${result.digest}`;
-        return `Gửi thất bại: ${result.error}`;
+        if (result.success) return `Successfully sent ${input.amount} SUI! TX: ${result.digest}`;
+        return `Send failed: ${result.error}`;
       }
       case 'create_capsule': {
         const { createCapsule } = await import('./capsule');
         let recipientAddr = userAddress;
-        let recipientName = 'Bản thân';
+        let recipientName = 'Self';
         if (input.recipient && input.recipient !== 'self') {
           if (input.recipient.startsWith('0x')) {
             recipientAddr = input.recipient;
@@ -120,32 +120,32 @@ async function executeTool(name: string, input: any, userAddress: string): Promi
           } else {
             const { findByName } = await import('./contacts');
             const contact = await findByName(input.recipient);
-            if (!contact) return `Không tìm thấy "${input.recipient}" trong danh bạ`;
+            if (!contact) return `"${input.recipient}" not found in address book`;
             recipientAddr = contact.walletAddress;
             recipientName = contact.name;
           }
         }
         const unlockAt = new Date(Date.now() + input.unlockAfterMinutes * 60000);
         await createCapsule({ content: input.content, senderAddress: userAddress, recipientAddress: recipientAddr, recipientName, unlockAt });
-        return `Capsule đã tạo! Mở khóa lúc ${unlockAt.toLocaleString('vi-VN')}`;
+        return `Capsule created! Unlocks at ${unlockAt.toLocaleString('en-US')}`;
       }
       case 'find_contact': {
         const { findByName } = await import('./contacts');
         const contact = await findByName(input.name);
-        if (!contact) return `Không tìm thấy "${input.name}"`;
+        if (!contact) return `"${input.name}" not found`;
         return `${contact.name}: ${contact.walletAddress}`;
       }
       case 'tx_history': {
         const { getTransactionHistory } = await import('./wallet');
         const txs = await getTransactionHistory(userAddress, 5);
-        if (!txs.length) return 'Chưa có giao dịch nào';
+        if (!txs.length) return 'No transactions yet';
         return txs.map(tx => `${tx.txType} - ${tx.status} - ${tx.gasFee} SUI`).join('\n');
       }
       default:
-        return `Tool "${name}" không tồn tại`;
+        return `Tool "${name}" does not exist`;
     }
   } catch (err) {
-    return `Lỗi: ${err instanceof Error ? err.message : 'Unknown error'}`;
+    return `Error: ${err instanceof Error ? err.message : 'Unknown error'}`;
   }
 }
 
@@ -211,7 +211,7 @@ export async function sendMessage(
     conversationHistory.push({ role: 'assistant', content: assistantContent });
 
     const text = assistantContent.map((b: any) => b.text).filter(Boolean).join('');
-    return { message: text || 'Đã thực hiện xong!', emotion: detectEmotion(text) };
+    return { message: text || 'Done!', emotion: detectEmotion(text) };
   } catch (err) {
     console.warn('Bedrock error:', err);
     return fallbackResponse(userMessage);
@@ -223,7 +223,7 @@ export function clearConversation() {
 }
 
 async function callBedrock(messages: any[], userAddress: string) {
-  const systemText = SYSTEM_PROMPT + (userAddress ? `\n\nĐịa chỉ ví user: ${userAddress}` : '');
+  const systemText = SYSTEM_PROMPT + (userAddress ? `\n\nUser wallet address: ${userAddress}` : '');
 
   const res = await fetch(BEDROCK_URL, {
     method: 'POST',
@@ -248,16 +248,16 @@ async function callBedrock(messages: any[], userAddress: string) {
 
 function detectEmotion(text: string): CharacterEmotion {
   const lower = text.toLowerCase();
-  if (lower.includes('thành công') || lower.includes('xong') || lower.includes('!')) return 'happy';
-  if (lower.includes('lỗi') || lower.includes('thất bại') || lower.includes('không')) return 'sad';
-  if (lower.includes('đang') || lower.includes('chờ')) return 'thinking';
+  if (lower.includes('success') || lower.includes('done') || lower.includes('!')) return 'happy';
+  if (lower.includes('error') || lower.includes('fail') || lower.includes('not')) return 'sad';
+  if (lower.includes('processing') || lower.includes('wait')) return 'thinking';
   return 'idle';
 }
 
 function fallbackResponse(message: string): AgentResponse {
   const lower = message.toLowerCase();
   if (lower.includes('chào') || lower.includes('hi') || lower.includes('hello')) {
-    return { message: 'Xin chào! Tôi là Marina. Bạn cần tôi giúp gì?', emotion: 'happy' };
+    return { message: 'Hello! I\'m Marina. How can I help you?', emotion: 'happy' };
   }
-  return { message: `Tôi đã nhận được: "${message}". Hãy cấu hình Bedrock API key để tôi hỗ trợ tốt hơn!`, emotion: 'idle' };
+  return { message: `I received: "${message}". Please configure the Bedrock API key so I can assist you better!`, emotion: 'idle' };
 }

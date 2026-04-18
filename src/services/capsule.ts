@@ -35,7 +35,7 @@ export function isLocked(capsule: CapsuleMetadata): boolean {
 
 export function timeUntilUnlock(capsule: CapsuleMetadata): string {
   const diff = new Date(capsule.unlockAt).getTime() - Date.now();
-  if (diff <= 0) return 'Có thể mở';
+  if (diff <= 0) return 'Ready to open';
   const days = Math.floor(diff / 86400000);
   const hours = Math.floor((diff % 86400000) / 3600000);
   const mins = Math.floor((diff % 3600000) / 60000);
@@ -63,7 +63,7 @@ export async function createCapsule(params: {
     console.log('Seal encrypted:', encryptedData.length, 'bytes');
   } catch (err) {
     console.error('Seal encrypt failed:', err);
-    throw new Error('Không thể mã hóa nội dung. Vui lòng thử lại.');
+    throw new Error('Unable to encrypt content. Please try again.');
   }
 
   // 2. Upload encrypted data to Walrus (via backend SDK)
@@ -213,7 +213,7 @@ export async function getCapsules(ownerAddress?: string): Promise<CapsuleMetadat
 
 export async function unlockCapsule(capsule: CapsuleMetadata, userAddress: string): Promise<string> {
   if (isLocked(capsule)) {
-    throw new Error(`Capsule chưa đến thời điểm mở khóa. Còn ${timeUntilUnlock(capsule)}`);
+    throw new Error(`Capsule is not yet ready to unlock. ${timeUntilUnlock(capsule)} remaining`);
   }
 
   // Download encrypted data from Walrus

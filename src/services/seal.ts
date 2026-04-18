@@ -127,7 +127,7 @@ export async function decrypt(encryptedData: Uint8Array, userAddress: string, ca
     console.log('PQ hybrid decryption...');
     const { getLocalSecretKey, pqDecrypt } = await import('./pq-crypto');
     const sk = await getLocalSecretKey();
-    if (!sk) throw new Error('PQ secret key không tìm thấy. Không thể giải mã.');
+    if (!sk) throw new Error('PQ secret key not found. Unable to decrypt.');
     const kemLen = new DataView(decrypted.buffer, decrypted.byteOffset).getUint32(1);
     const kemCiphertext = decrypted.slice(5, 5 + kemLen);
     const ciphertext = decrypted.slice(5 + kemLen);

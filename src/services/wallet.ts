@@ -40,7 +40,7 @@ async function buildTransferTx(senderAddress: string, recipient: string, amountS
 
 async function signWithWallet(txBytes: Uint8Array): Promise<string> {
   const keypair = await getStoredKeypair();
-  if (!keypair) throw new Error('Không tìm thấy keypair. Vui lòng đăng nhập lại.');
+  if (!keypair) throw new Error('Keypair not found. Please log in again.');
   const { signature } = await keypair.signTransaction(txBytes);
   return signature;
 }
@@ -94,7 +94,7 @@ export async function sendSui(
     return await submitTransaction(txBytes, signature);
   } catch (err) {
     console.warn('sendSui error:', err);
-    return { digest: '', success: false, error: err instanceof Error ? err.message : 'Lỗi gửi SUI' };
+    return { digest: '', success: false, error: err instanceof Error ? err.message : 'Failed to send SUI' };
   }
 }
 
@@ -145,29 +145,29 @@ function classifyTx(commands: any[], sender: string, myAddress: string): string 
     const mod = moveCall.function?.module?.name ?? '';
 
     // Walrus storage
-    if (fn === 'certify_blob' || fn === 'certify_blob_v2') return 'Xác nhận Blob';
-    if (fn === 'reserve_space') return 'Lưu trữ Walrus';
-    if (fn === 'extend_blob') return 'Gia hạn Blob';
+    if (fn === 'certify_blob' || fn === 'certify_blob_v2') return 'Certify Blob';
+    if (fn === 'reserve_space') return 'Walrus Storage';
+    if (fn === 'extend_blob') return 'Extend Blob';
 
     // Luna capsule
-    if (fn === 'create_capsule') return 'Tạo Capsule';
-    if (fn === 'seal_approve') return 'Mở Capsule';
+    if (fn === 'create_capsule') return 'Create Capsule';
+    if (fn === 'seal_approve') return 'Open Capsule';
 
     // Common
     if (mod === 'sui_system' || fn.includes('stake')) return 'Stake';
     if (fn.includes('swap') || fn.includes('exchange')) return 'Swap';
     if (fn.includes('mint')) return 'Mint';
-    if (fn === 'transfer') return 'Gửi';
+    if (fn === 'transfer') return 'Send';
 
     return `${mod}::${fn}`;
   }
 
   if (types.includes('TransferObjectsCommand')) {
-    return sender === myAddress ? 'Gửi' : 'Nhận';
+    return sender === myAddress ? 'Send' : 'Receive';
   }
-  if (types.includes('MergeCoinsCommand')) return 'Gộp coin';
+  if (types.includes('MergeCoinsCommand')) return 'Merge Coins';
   if (types.includes('PublishCommand')) return 'Deploy';
   if (types.includes('UpgradeCommand')) return 'Upgrade';
 
-  return sender === myAddress ? 'Gửi' : 'Nhận';
+  return sender === myAddress ? 'Send' : 'Receive';
 }
