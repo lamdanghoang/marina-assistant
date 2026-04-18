@@ -10,6 +10,11 @@ import { useAppStore } from '../src/store/appStore';
 import { createCapsule } from '../src/services/capsule';
 import { findByName } from '../src/services/contacts';
 
+const formatDate = (d: Date) => {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 export default function CreateCapsuleScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -50,7 +55,7 @@ export default function CreateCapsuleScreen() {
         recipientName: name,
         unlockAt: unlockDate,
       });
-      Alert.alert('Success', `Capsule created! Unlocks at ${unlockDate.toLocaleString()}.`, [
+      Alert.alert('Success', `Capsule created! Unlocks at ${formatDate(unlockDate)}.`, [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err) {
@@ -61,13 +66,15 @@ export default function CreateCapsuleScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { paddingTop: insets.top + spacing.md }]} contentContainerStyle={{ paddingBottom: 100 }}>
-      <View style={styles.header}>
+    <View style={[{ flex: 1, backgroundColor: colors.surface }, { paddingTop: insets.top + spacing.md }]}>
+      <View style={[styles.header, { paddingHorizontal: spacing.xl }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <ArrowLeft size={20} color={colors.primary} />
         </TouchableOpacity>
         <Text style={styles.title}>Mint New Capsule</Text>
       </View>
+
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
 
       <GlassPanel style={styles.form}>
         {/* Recipient toggle */}
@@ -90,20 +97,36 @@ export default function CreateCapsuleScreen() {
 
         {/* Unlock time */}
         <View style={styles.field}>
-          <Text style={styles.label}>UNLOCK TEMPORAL POINT</Text>
+          <Text style={styles.label}>UNLOCK DATE</Text>
+          <View style={styles.presets}>
+            {[
+              { label: '1h', ms: 3600000 },
+              { label: '1d', ms: 86400000 },
+              { label: '7d', ms: 604800000 },
+              { label: '30d', ms: 2592000000 },
+              { label: '1y', ms: 31536000000 },
+            ].map(p => (
+              <TouchableOpacity key={p.label} style={styles.presetBtn} onPress={() => setUnlockDate(new Date(Date.now() + p.ms))}>
+                <Text style={styles.presetText}>{p.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <TouchableOpacity style={styles.dateBtn} onPress={() => setShowPicker(true)}>
-            <Text style={styles.dateText}>{unlockDate.toLocaleString()}</Text>
+            <Text style={styles.dateText}>{formatDate(unlockDate)}</Text>
             <Calendar size={18} color={'rgba(143,245,255,0.4)'} />
           </TouchableOpacity>
         </View>
 
         {showPicker && (
-          <DateTimePicker value={unlockDate} mode="datetime" display={Platform.OS === 'ios' ? 'spinner' : 'default'} minimumDate={new Date()} onChange={(_, date) => { if (Platform.OS === 'android') setShowPicker(false); if (date) setUnlockDate(date); }} themeVariant="dark" />
-        )}
-        {Platform.OS === 'ios' && showPicker && (
-          <TouchableOpacity style={styles.doneBtn} onPress={() => setShowPicker(false)}>
-            <Text style={styles.doneBtnText}>Done</Text>
-          </TouchableOpacity>
+          <View style={styles.pickerOverlay}>
+            <TouchableOpacity style={styles.pickerBg} onPress={() => setShowPicker(false)} activeOpacity={1} />
+            <View style={styles.pickerCard}>
+              <DateTimePicker value={unlockDate} mode="datetime" display="spinner" minimumDate={new Date()} onChange={(_, date) => { if (date) setUnlockDate(date); }} themeVariant="dark" />
+              <TouchableOpacity style={styles.pickerDone} onPress={() => setShowPicker(false)}>
+                <Text style={styles.pickerDoneText}>CONFIRM</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
 
         {/* Content */}
@@ -128,6 +151,7 @@ export default function CreateCapsuleScreen() {
         <Text style={styles.feeText}>Requires ~0.05 SUI for Gas & Walrus Storage Fee</Text>
       </GlassPanel>
     </ScrollView>
+    </View>
   );
 }
 
@@ -143,13 +167,19 @@ const styles = StyleSheet.create({
   toggleText: { color: colors.onSurfaceVariant, fontSize: typography.sizes.sm, fontWeight: typography.weights.medium },
   toggleTextActive: { color: colors.surface },
   field: { gap: spacing.sm },
+  presets: { flexDirection: 'row', gap: spacing.sm },
+  presetBtn: { flex: 1, paddingVertical: spacing.sm, borderRadius: borderRadius.md, backgroundColor: colors.surfaceContainerHigh, alignItems: 'center', borderWidth: 1, borderColor: colors.glassBorder },
+  presetText: { fontSize: typography.sizes.xs, fontWeight: typography.weights.bold, color: colors.primary, letterSpacing: 1 },
   label: { fontSize: typography.sizes.xs, letterSpacing: 3, color: 'rgba(143,245,255,0.6)', fontWeight: typography.weights.bold, marginLeft: 2 },
   input: { backgroundColor: colors.surfaceContainer, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: colors.glassBorder, padding: spacing.lg, color: colors.onSurface, fontSize: typography.sizes.md },
   textarea: { height: 160, textAlignVertical: 'top' },
   dateBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surfaceContainer, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: colors.glassBorder, padding: spacing.lg },
   dateText: { color: colors.primary, fontSize: typography.sizes.md, fontWeight: typography.weights.bold },
-  doneBtn: { alignSelf: 'flex-end' },
-  doneBtnText: { color: colors.primary, fontSize: typography.sizes.md, fontWeight: typography.weights.bold },
+  pickerOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', zIndex: 10 },
+  pickerBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)' },
+  pickerCard: { marginHorizontal: spacing.xl, backgroundColor: colors.surfaceContainerHigh, borderRadius: borderRadius.xl, overflow: 'hidden', borderWidth: 1, borderColor: colors.glassBorder },
+  pickerDone: { paddingVertical: 16, alignItems: 'center', backgroundColor: colors.primary },
+  pickerDoneText: { color: colors.surface, fontWeight: typography.weights.bold, letterSpacing: 3, fontSize: typography.sizes.sm },
   infoCard: { flexDirection: 'row', gap: spacing.lg, padding: spacing.xl, backgroundColor: colors.surfaceContainerLow },
   infoTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.bold, color: colors.onSurface },
   infoDesc: { fontSize: typography.sizes.xs, color: colors.onSurfaceVariant, lineHeight: 16, marginTop: 4 },

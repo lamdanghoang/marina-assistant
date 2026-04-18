@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
-import { Droplets, Database, ArrowUpRight, ArrowDownLeft, RefreshCw, ChevronRight, Bell, ShieldCheck } from 'lucide-react-native';
+import { Droplets, Database, ArrowUpRight, ArrowDownLeft, RefreshCw, ChevronRight, Bell, ShieldCheck, Copy } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius } from '../../src/constants/theme';
 import { GlassPanel } from '../../src/components/shared/GlassPanel';
 import { Skeleton } from '../../src/components/shared/Skeleton';
@@ -42,7 +42,7 @@ export default function ProfileScreen() {
     }
   }, [session?.walletAddress]);
 
-  const truncAddr = (a: string) => a ? `${a.slice(0, 6)}...${a.slice(-4)}` : '';
+  const truncAddr = (a: string) => a ? `${a.slice(0, 5)}...${a.slice(-5)}` : '';
 
   const handleLogout = () => {
     Alert.alert('Disconnect', 'Are you sure?', [
@@ -61,9 +61,16 @@ export default function ProfileScreen() {
           </View>
         </View>
         <View style={styles.avatarInfo}>
-          <Text style={styles.agentLabel}>AUTHENTICATED AGENT</Text>
-          <Text style={styles.agentName}>{truncAddr(session?.walletAddress ?? '')}</Text>
-          <Text style={styles.agentDesc}>Synchronized with Sui Testnet. Auth: {session?.authMethod ?? 'unknown'}.</Text>
+          <Text style={styles.agentLabel}>WALLET ADDRESS</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 4 }}>
+            <Text style={styles.agentName} selectable>{truncAddr(session?.walletAddress ?? '')}</Text>
+            <TouchableOpacity onPress={() => { import('expo-clipboard').then(({ setStringAsync }) => setStringAsync(session?.walletAddress ?? '').then(() => Alert.alert('Copied'))).catch(() => {}); }}>
+              <Copy size={16} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.authBadge}>
+            <Text style={styles.authBadgeText}>{session?.authMethod === 'zklogin' ? '🔐 zkLogin' : '🔑 Wallet'}</Text>
+          </View>
         </View>
       </GlassPanel>
 
@@ -196,8 +203,9 @@ const styles = StyleSheet.create({
   avatarInner: { flex: 1, borderRadius: 10, backgroundColor: colors.surfaceContainer, alignItems: 'center', justifyContent: 'center' },
   avatarInfo: { flex: 1 },
   agentLabel: { fontSize: typography.sizes.xs, letterSpacing: typography.tracking.widest, color: colors.primary, opacity: 0.7, fontWeight: typography.weights.bold },
-  agentName: { fontSize: typography.sizes.xxl, fontWeight: typography.weights.bold, color: colors.onSurface, marginTop: 4 },
-  agentDesc: { fontSize: typography.sizes.sm, color: colors.onSurfaceVariant, marginTop: 4, lineHeight: 18 },
+  agentName: { fontSize: typography.sizes.lg, fontWeight: typography.weights.bold, color: colors.onSurface, fontFamily: 'monospace' },
+  authBadge: { marginTop: spacing.sm, alignSelf: 'flex-start', paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: borderRadius.full, backgroundColor: 'rgba(143,245,255,0.1)', borderWidth: 1, borderColor: 'rgba(143,245,255,0.2)' },
+  authBadgeText: { fontSize: typography.sizes.xs, color: colors.primary, fontWeight: typography.weights.bold, letterSpacing: 1 },
 
   statsRow: { gap: spacing.lg, marginBottom: spacing.xl },
   portfolioCard: { padding: spacing.xxl },

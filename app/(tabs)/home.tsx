@@ -7,6 +7,7 @@ import { colors, typography, spacing, borderRadius } from '../../src/constants/t
 import { GlassPanel } from '../../src/components/shared/GlassPanel';
 import { PulseRings } from '../../src/components/shared/PulseRings';
 import { Skeleton } from '../../src/components/shared/Skeleton';
+import { SpriteCharacter } from '../../src/components/3d/SpriteCharacter';
 import { useAppStore } from '../../src/store/appStore';
 import { sendMessage, createMessage } from '../../src/services/chat';
 import { speak, startListening, stopListening } from '../../src/services/voice';
@@ -24,6 +25,7 @@ export default function HomeScreen() {
   const setBalance = useAppStore((s) => s.setBalance);
   const [listening, setListening] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [charAnim, setCharAnim] = useState('idle');
   const [msg, setMsg] = useState('Good morning, Traveler. The Sui network is calm today. How can I assist you?');
 
   useEffect(() => {
@@ -35,20 +37,21 @@ export default function HomeScreen() {
   const truncAddr = (a: string) => a ? `${a.slice(0, 4)}...${a.slice(-4)}` : '';
 
   const onVoiceResult = useCallback(async (text: string) => {
-    setListening(false); setProcessing(true); setMsg('Processing...');
+    setListening(false); setProcessing(true); setMsg('Processing...'); setCharAnim('thinking');
     addMessage(createMessage(text, 'user', language));
     try {
       const r = await sendMessage(text, language, session?.walletAddress);
       setMsg(r.message);
       addMessage(createMessage(r.message, 'marina', language));
-      if (voiceEnabled) await speak(r.message, language);
-    } catch { setMsg('Sorry, something went wrong.'); }
+      setCharAnim(r.emotion === 'happy' ? 'happy' : 'idle');
+      if (voiceEnabled) { setCharAnim('talking'); await speak(r.message, language); setCharAnim('idle'); }
+    } catch { setMsg('Sorry, something went wrong.'); setCharAnim('sad'); }
     finally { setProcessing(false); }
   }, [language, voiceEnabled, session?.walletAddress]);
 
   const toggleMic = useCallback(async () => {
     if (listening) { await stopListening(); setListening(false); return; }
-    setListening(true); setMsg('Listening...');
+    setListening(true); setMsg('Listening...'); setCharAnim('interact');
     try {
       const { ExpoSpeechRecognitionModule } = await import('expo-speech-recognition');
       ExpoSpeechRecognitionModule.removeAllListeners('result');
@@ -77,7 +80,9 @@ export default function HomeScreen() {
 
       <View style={styles.center}>
         <View style={styles.glow} />
-        <Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBHFJqam6R44Lbsa1sMC7_QrhGICCY70ZIa4sM-ryQA8o-0QFIVtkmJReeFu6ComDOjSTL3P7ug3r-2GCYopbbe8HeccnCBzxbjrv2tsSMcycngZ5UELFH7oavgoSoo4fYJfNfdRoEzXQ2seJcvt32t6Esilx6LBwsd1CHH5mU41FtfmY-XmsrO8Jo8BKG85ChJjnzD4DaYi0heZIPPPIurlffk-9cocKgMgqTwVCTmimo01ouunFpRTx8RppzHJ6xcWAq2BCGBJUY' }} style={styles.char} resizeMode="contain" />
+        <TouchableOpacity onPress={() => setCharAnim(charAnim === 'idle' ? 'interact' : 'idle')} activeOpacity={0.9}>
+          <SpriteCharacter animation={charAnim} size={SW * 0.7} fps={6} />
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => router.push('/(tabs)/chat')} activeOpacity={0.8}>
           <GlassPanel style={styles.bubble}>
             <Text style={styles.bubbleLabel}>{listening ? 'YOU' : 'MARINA'}</Text>
@@ -113,7 +118,6 @@ const styles = StyleSheet.create({
   pillText: { fontSize: typography.sizes.md, fontWeight: typography.weights.bold, color: colors.primary },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   glow: { position: 'absolute', width: 400, height: 400, borderRadius: 200, backgroundColor: 'rgba(143,245,255,0.03)' },
-  char: { width: SW * 0.85, height: SW * 0.85, marginTop: -40 },
   bubble: { position: 'absolute', top: '8%', right: spacing.xl, maxWidth: 200, padding: spacing.lg, borderRadius: 16, borderTopLeftRadius: 4 },
   bubbleLabel: { fontSize: typography.sizes.xs, letterSpacing: 3, color: colors.primary, fontWeight: typography.weights.bold, marginBottom: 4 },
   bubbleText: { fontSize: typography.sizes.md, lineHeight: 20, color: colors.onSurface },
