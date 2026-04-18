@@ -58,16 +58,21 @@ export default function ContactsScreen() {
         )}
         ListEmptyComponent={<Text style={styles.empty}>No contacts</Text>}
       />
-      {showAdd ? (
-        <GlassPanel style={styles.addForm}>
-          <TextInput style={styles.input} placeholder="Name" placeholderTextColor={colors.onSurfaceVariant + '66'} value={newName} onChangeText={setNewName} />
-          <TextInput style={styles.input} placeholder="Address (0x...)" placeholderTextColor={colors.onSurfaceVariant + '66'} value={newAddr} onChangeText={setNewAddr} autoCapitalize="none" />
-          <View style={{ flexDirection: 'row', gap: spacing.md }}>
-            <TouchableOpacity style={[styles.formBtn, { flex: 1 }]} onPress={() => setShowAdd(false)}><Text style={styles.formBtnText}>Cancel</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.formBtn, styles.formBtnPrimary, { flex: 1 }]} onPress={handleAdd}><Text style={[styles.formBtnText, { color: colors.surface }]}>Save</Text></TouchableOpacity>
-          </View>
-        </GlassPanel>
-      ) : (
+      {showAdd && (
+        <View style={styles.overlay}>
+          <TouchableOpacity style={styles.overlayBg} onPress={() => setShowAdd(false)} activeOpacity={1} />
+          <GlassPanel style={styles.addForm}>
+            <Text style={styles.addTitle}>NEW CONTACT</Text>
+            <TextInput style={styles.input} placeholder="Name" placeholderTextColor={colors.onSurfaceVariant + '66'} value={newName} onChangeText={setNewName} />
+            <TextInput style={styles.input} placeholder="Address (0x...)" placeholderTextColor={colors.onSurfaceVariant + '66'} value={newAddr} onChangeText={setNewAddr} autoCapitalize="none" />
+            <View style={{ flexDirection: 'row', gap: spacing.md }}>
+              <TouchableOpacity style={[styles.formBtn, { flex: 1 }]} onPress={() => setShowAdd(false)}><Text style={styles.formBtnText}>Cancel</Text></TouchableOpacity>
+              <TouchableOpacity style={[styles.formBtn, styles.formBtnPrimary, { flex: 1 }]} onPress={handleAdd}><Text style={[styles.formBtnText, { color: colors.surface }]}>Save</Text></TouchableOpacity>
+            </View>
+          </GlassPanel>
+        </View>
+      )}
+      {!showAdd && (
         <TouchableOpacity style={styles.fab} onPress={() => setShowAdd(true)}><Plus size={24} color={colors.surface} /></TouchableOpacity>
       )}
     </View>
@@ -86,7 +91,10 @@ const styles = StyleSheet.create({
   cardName: { fontSize: typography.sizes.lg, fontWeight: typography.weights.bold, color: colors.onSurface },
   cardAddr: { fontSize: typography.sizes.xs, color: 'rgba(143,245,255,0.6)', fontFamily: 'monospace', marginTop: 2 },
   empty: { textAlign: 'center', color: colors.onSurfaceVariant, marginTop: 40 },
-  addForm: { padding: spacing.xl, gap: spacing.md, position: 'absolute', bottom: 100, left: spacing.xl, right: spacing.xl },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', paddingHorizontal: spacing.xl, zIndex: 10 },
+  overlayBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)' },
+  addForm: { padding: spacing.xl, gap: spacing.md },
+  addTitle: { fontSize: typography.sizes.sm, fontWeight: typography.weights.bold, color: colors.primary, letterSpacing: 3, textAlign: 'center', marginBottom: spacing.sm },
   input: { backgroundColor: colors.surfaceContainer, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: colors.glassBorder, padding: spacing.lg, color: colors.onSurface },
   formBtn: { paddingVertical: 14, borderRadius: borderRadius.lg, alignItems: 'center', borderWidth: 1, borderColor: colors.glassBorder },
   formBtnPrimary: { backgroundColor: colors.primary, borderColor: colors.primary },

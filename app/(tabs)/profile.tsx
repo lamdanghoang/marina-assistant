@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { Droplets, Database, ArrowUpRight, ArrowDownLeft, RefreshCw, ChevronRight, Bell, ShieldCheck } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius } from '../../src/constants/theme';
 import { GlassPanel } from '../../src/components/shared/GlassPanel';
@@ -21,7 +22,7 @@ export default function ProfileScreen() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loadingTx, setLoadingTx] = useState(true);
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     if (session?.walletAddress) {
       if (!balance) {
         import('../../src/services/wallet').then(({ getBalance }) => getBalance(session.walletAddress).then(setBalance));
@@ -32,6 +33,8 @@ export default function ProfileScreen() {
       import('../../src/services/contacts').then(({ getContacts }) => getContacts().then(setContacts));
     }
   }, [session?.walletAddress]);
+
+  useFocusEffect(loadData);
 
   useEffect(() => {
     if (session?.walletAddress) {

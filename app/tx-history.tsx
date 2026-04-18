@@ -45,7 +45,7 @@ export default function TxHistoryScreen() {
                   <Text style={styles.txTime}>{item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' as const }}>
-                  <View style={[styles.statusDot, item.status === 'SUCCESS' && styles.statusSuccess]} />
+                  <Text style={[styles.txStatus, item.status === 'SUCCESS' && styles.txStatusOk]}>{item.status === 'SUCCESS' ? 'SUCCESS' : 'FAILED'}</Text>
                   <Text style={styles.txGas}>{item.gasFee} SUI</Text>
                 </View>
               </GlassPanel>
@@ -67,8 +67,8 @@ const styles = StyleSheet.create({
   txIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.surfaceContainer, alignItems: 'center', justifyContent: 'center' },
   txType: { fontSize: typography.sizes.md, fontWeight: typography.weights.bold, color: colors.onSurface },
   txTime: { fontSize: typography.sizes.xs, color: colors.onSurfaceVariant, marginTop: 2 },
-  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.outline },
-  statusSuccess: { backgroundColor: colors.success },
   txGas: { fontSize: typography.sizes.sm, color: colors.onSurfaceVariant, marginTop: 4 },
+  txStatus: { fontSize: typography.sizes.xs, fontWeight: typography.weights.bold, letterSpacing: 0, color: colors.error },
+  txStatusOk: { color: colors.success },
   empty: { textAlign: 'center', color: colors.onSurfaceVariant, marginTop: 40 },
 });
