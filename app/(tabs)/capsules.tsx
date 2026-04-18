@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -6,11 +6,21 @@ import { ShieldCheck, Plus } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius } from '../../src/constants/theme';
 import { GlassPanel } from '../../src/components/shared/GlassPanel';
 import { PulseRings } from '../../src/components/shared/PulseRings';
-import { CAPSULES } from '../../src/constants/data';
+import { Skeleton } from '../../src/components/shared/Skeleton';
+import { useAppStore } from '../../src/store/appStore';
+import { getCapsules, isLocked, timeUntilUnlock } from '../../src/services/capsule';
+import type { Capsule } from '../../src/types';
 
 export default function CapsulesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const session = useAppStore((s) => s.session);
+  const [capsules, setCapsules] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getCapsules(session?.walletAddress).then(c => { setCapsules(c); setLoading(false); });
+  }, [session?.walletAddress]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
@@ -22,60 +32,47 @@ export default function CapsulesScreen() {
 
       {/* Capsule list */}
       <FlatList
-        data={CAPSULES}
+        data={capsules}
         keyExtractor={c => c.id}
         numColumns={1}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => {
-          const isUnlocked = item.status === 'unlocked';
+          const locked = isLocked(item);
           return (
             <TouchableOpacity onPress={() => router.push({ pathname: '/capsule-detail', params: { id: item.id } })} activeOpacity={0.8}>
-              <GlassPanel style={[styles.card, isUnlocked && styles.cardUnlocked]}>
-                {/* Top row */}
+              <GlassPanel style={[styles.card, !locked && styles.cardUnlocked]}>
                 <View style={styles.cardTop}>
                   <View>
-                    <Text style={[styles.cardStatus, isUnlocked && { color: colors.secondary }]}>
-                      {isUnlocked ? 'STATUS: OPEN' : 'LOCKED CAPSULE'}
+                    <Text style={[styles.cardStatus, !locked && { color: colors.secondary }]}>
+                      {locked ? 'LOCKED CAPSULE' : 'STATUS: OPEN'}
                     </Text>
-                    <Text style={styles.cardRecipient}>{item.recipient}</Text>
+                    <Text style={styles.cardRecipient}>{item.recipientName || 'Capsule'}</Text>
                   </View>
-                  <View style={[styles.cardShield, isUnlocked && styles.cardShieldOpen]}>
-                    <ShieldCheck size={22} color={isUnlocked ? colors.surface : colors.primary} />
+                  <View style={[styles.cardShield, !locked && styles.cardShieldOpen]}>
+                    <ShieldCheck size={22} color={!locked ? colors.surface : colors.primary} />
                   </View>
                 </View>
-
-                {/* Center: countdown or preview */}
-                {!isUnlocked && (item.remainingTime || item.unlockDate) ? (
+                {locked && (
                   <View style={styles.countdownArea}>
                     <View style={styles.countdownLine} />
                     <View style={styles.countdownCenter}>
-                      <Text style={styles.countdownText}>{item.remainingTime || item.unlockDate}</Text>
+                      <Text style={styles.countdownText}>{timeUntilUnlock(item)}</Text>
                       <Text style={styles.countdownLabel}>UNLOCKS IN</Text>
                     </View>
                     <View style={styles.countdownLine} />
                   </View>
-                ) : null}
-
-                {isUnlocked && item.preview ? (
-                  <View style={styles.previewBox}>
-                    <Text style={styles.previewText} numberOfLines={2}>{item.preview}</Text>
-                  </View>
-                ) : null}
-
-                {/* Bottom row */}
+                )}
                 <View style={styles.cardBottom}>
                   <View>
                     <Text style={styles.cardMetaLabel}>CREATED</Text>
-                    <Text style={styles.cardMetaValue}>{item.createdDate}</Text>
+                    <Text style={styles.cardMetaValue}>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ''}</Text>
                   </View>
-                  {isUnlocked ? (
-                    <View style={styles.readBtn}>
-                      <Text style={styles.readBtnText}>READ FULL</Text>
-                    </View>
+                  {!locked ? (
+                    <View style={styles.readBtn}><Text style={styles.readBtnText}>OPEN</Text></View>
                   ) : (
                     <View style={{ alignItems: 'flex-end' as const }}>
-                      <Text style={styles.cardMetaLabel}>PROTOCOL</Text>
-                      <Text style={[styles.cardMetaValue, { color: colors.secondary }]}>{item.protocol}</Text>
+                      <Text style={styles.cardMetaLabel}>STORAGE</Text>
+                      <Text style={[styles.cardMetaValue, { color: colors.secondary }]}>WALRUS</Text>
                     </View>
                   )}
                 </View>

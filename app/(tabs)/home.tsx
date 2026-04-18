@@ -72,7 +72,7 @@ export default function HomeScreen() {
           <View style={styles.avatar}><Image source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDmFeGsPnMllH0l1nFInGBj-qHptCJ8WngJ8kUxJVNPZ7dplrE2yMjghAIMlqj568baN2o_xzAQElwMaU5TfElbWdPbY-N8dU3hZehrSWLQg7xUURdufYJtMEswe0FofA6kIYa_HoVPDlahzMzNUzjyN7YgrqnQcVs4bBhCcg80FSBwLCvRc5Lam1xoZOvnFe6qdxifymPYxBSS6jw65UIhqrOncqCbDM34aavL_nXM2g29kHjbd5_OzucX1MRYUQ9Vhqc7WwS8SJQ' }} style={{ width: '100%', height: '100%' }} /></View>
           <Text style={styles.addr}>{truncAddr(session?.walletAddress ?? '')}</Text>
         </View>
-        <View style={styles.pill}><Droplets size={14} color={colors.primary} />{balance ? <Text style={styles.pillText}>{balance} SUI</Text> : <Skeleton width={60} height={16} borderRadius={4} />}</View>
+        <View style={styles.pill}><Droplets size={14} color={colors.primary} />{balance ? <Text style={styles.pillText}>{parseFloat(balance).toFixed(2)} SUI</Text> : <Skeleton width={56} height={14} borderRadius={4} />}</View>
       </View>
 
       <View style={styles.center}>
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   topLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   avatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(143,245,255,0.2)', overflow: 'hidden' },
   addr: { fontSize: typography.sizes.lg, fontWeight: typography.weights.bold, color: 'rgba(143,245,255,0.8)' },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: 6, borderRadius: borderRadius.full, backgroundColor: colors.surfaceContainerHighest, borderWidth: 1, borderColor: colors.glassBorder },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: 6, borderRadius: borderRadius.full, backgroundColor: colors.surfaceContainerHighest, borderWidth: 1, borderColor: colors.glassBorder, minWidth: 100 },
   pillText: { fontSize: typography.sizes.md, fontWeight: typography.weights.bold, color: colors.primary },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   glow: { position: 'absolute', width: 400, height: 400, borderRadius: 200, backgroundColor: 'rgba(143,245,255,0.03)' },
