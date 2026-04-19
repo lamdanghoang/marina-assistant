@@ -102,6 +102,13 @@ const TOOLS = [
       inputSchema: { json: { type: 'object', properties: {} } },
     },
   },
+  {
+    toolSpec: {
+      name: 'upload_file',
+      description: 'User wants to upload a file to Walrus storage. Call this when user asks to upload, store, or save a file.',
+      inputSchema: { json: { type: 'object', properties: {} } },
+    },
+  },
 ];
 
 // Tool executor
@@ -168,6 +175,9 @@ async function executeTool(name: string, input: any, userAddress: string): Promi
         if (!files.length) return 'No files stored yet. You can upload files from the Files screen.';
         return `${files.length} file(s): ${files.slice(0, 5).map(f => f.name).join(', ')}${files.length > 5 ? '...' : ''}.`;
       }
+      case 'upload_file': {
+        return '__ACTION:UPLOAD_FILE__';
+      }
       default:
         return `Tool "${name}" does not exist`;
     }
@@ -180,6 +190,7 @@ export interface AgentResponse {
   message: string;
   emotion: CharacterEmotion;
   toolUsed?: string;
+  action?: string;
 }
 
 // Conversation history for multi-turn
@@ -238,7 +249,9 @@ export async function sendMessage(
     conversationHistory.push({ role: 'assistant', content: assistantContent });
 
     const text = assistantContent.map((b: any) => b.text).filter(Boolean).join('');
-    return { message: text || 'Done!', emotion: detectEmotion(text) };
+    const action = text.includes('__ACTION:UPLOAD_FILE__') ? 'upload_file' : undefined;
+    const cleanText = text.replace('__ACTION:UPLOAD_FILE__', '').trim();
+    return { message: cleanText || 'Ready to upload!', emotion: detectEmotion(cleanText), action };
   } catch (err) {
     console.warn('Bedrock error:', err);
     return fallbackResponse(userMessage);

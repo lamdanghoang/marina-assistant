@@ -1,11 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, Linking, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Linking, TouchableOpacity, Alert } from 'react-native';
+import { Upload } from 'lucide-react-native';
 import { colors, typography, spacing } from '../../constants/theme';
 
 interface Props {
   content: string;
   sender: 'user' | 'marina';
   action?: { type: string; detail?: string; capsuleId?: string; txId?: string };
+  onUploadFile?: () => void;
 }
 
 const renderContent = (text: string) => {
@@ -20,13 +22,19 @@ const renderContent = (text: string) => {
   );
 };
 
-export const ChatBubble: React.FC<Props> = ({ content, sender, action }) => {
+export const ChatBubble: React.FC<Props> = ({ content, sender, action, onUploadFile }) => {
   const isUser = sender === 'user';
   return (
     <View style={[styles.wrapper, isUser ? styles.wrapperUser : styles.wrapperMarina]}>
       <Text style={styles.label}>{isUser ? 'YOU' : 'MARINA'}</Text>
       <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleMarina]}>
         <Text style={styles.text}>{renderContent(content)}</Text>
+        {action?.type === 'upload_file' && onUploadFile && (
+          <TouchableOpacity style={styles.uploadBtn} onPress={onUploadFile}>
+            <Upload size={16} color={colors.surface} />
+            <Text style={styles.uploadBtnText}>Choose File</Text>
+          </TouchableOpacity>
+        )}
         {action?.detail && (
           <View style={styles.actionCard}>
             <Text style={styles.actionLabel}>{action.type === 'balance' ? 'Available Balance' : 'Detail'}</Text>
@@ -54,6 +62,8 @@ const styles = StyleSheet.create({
   bubbleMarina: { backgroundColor: colors.glass, borderColor: colors.glassBorder, borderTopLeftRadius: 4 },
   text: { fontSize: typography.sizes.md, lineHeight: 22, color: colors.onSurface },
   link: { color: colors.primary, textDecorationLine: 'underline' },
+  uploadBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, marginTop: spacing.md, alignSelf: 'flex-start' },
+  uploadBtnText: { color: colors.surface, fontSize: 13, fontWeight: '700', letterSpacing: 1 },
   actionCard: { marginTop: spacing.md, backgroundColor: colors.surfaceContainerLow, padding: spacing.md, borderRadius: 8, borderWidth: 1, borderColor: colors.glassBorder },
   actionLabel: { fontSize: typography.sizes.xs, color: colors.onSurfaceVariant, textTransform: 'uppercase', letterSpacing: typography.tracking.wider },
   actionValue: { fontSize: typography.sizes.md, fontWeight: typography.weights.bold, color: colors.onSurface, marginTop: 2 },

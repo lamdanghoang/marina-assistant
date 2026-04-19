@@ -21,7 +21,7 @@ export interface ChatMessage {
 }
 
 export interface ChatAction {
-  type: 'balance' | 'capsule' | 'transaction';
+  type: 'balance' | 'capsule' | 'transaction' | 'upload_file';
   detail?: string;
   capsuleId?: string;
   txId?: string;

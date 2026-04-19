@@ -28,7 +28,8 @@ export default function ChatScreen() {
     setInput(''); setLoading(true); setAnimation('thinking');
     try {
       const r = await sendMessage(text.trim(), language, session?.walletAddress);
-      addMessage(createMessage(r.message, 'marina', language));
+      const action = r.action === 'upload_file' ? { type: 'upload_file' as const } : undefined;
+      addMessage(createMessage(r.message, 'marina', language, action));
       setLoading(false); setAnimation(r.emotion === 'happy' ? 'happy' : 'idle');
       if (voiceEnabled) { setAnimation('talking'); await speak(r.message, language); setAnimation('idle'); }
     } catch {
@@ -45,7 +46,20 @@ export default function ChatScreen() {
         ref={listRef}
         data={messages}
         keyExtractor={m => m.id}
-        renderItem={({ item }) => <ChatBubble content={item.content} sender={item.sender} action={item.action} />}
+        renderItem={({ item }) => <ChatBubble content={item.content} sender={item.sender} action={item.action} onUploadFile={item.action?.type === 'upload_file' ? async () => {
+          try {
+            const { getDocumentAsync } = await import('expo-document-picker');
+            const result = await getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
+            if (result.canceled || !result.assets?.[0]) return;
+            const asset = result.assets[0];
+            addMessage(createMessage(`Uploading ${asset.name}...`, 'marina', language));
+            const { uploadFile } = await import('../../src/services/files');
+            await uploadFile(asset.uri, asset.name, asset.size ?? 0, asset.mimeType ?? 'application/octet-stream');
+            addMessage(createMessage(`${asset.name} uploaded to Walrus!`, 'marina', language));
+          } catch (e: any) {
+            addMessage(createMessage(`Upload failed: ${e.message}`, 'marina', language));
+          }
+        } : undefined} />}
         contentContainerStyle={styles.list}
         onContentSizeChange={() => listRef.current?.scrollToEnd()}
       />
