@@ -127,7 +127,7 @@ export default function ProfileScreen() {
         ))}
       </GlassPanel>
 
-      {/* Contacts + System Config */}
+      {/* Contacts & Files */}
       <View style={styles.bottomGrid}>
         <View style={styles.bottomCol}>
           <View style={styles.sectionHeader}>
@@ -147,6 +147,13 @@ export default function ProfileScreen() {
             ))}
           </GlassPanel>
         </View>
+      </View>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Files on Walrus</Text>
+        <TouchableOpacity onPress={() => router.push('/files')}>
+          <Text style={styles.viewAllText}>MANAGE</Text>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>

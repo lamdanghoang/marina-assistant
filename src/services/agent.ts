@@ -95,6 +95,13 @@ const TOOLS = [
       inputSchema: { json: { type: 'object', properties: {} } },
     },
   },
+  {
+    toolSpec: {
+      name: 'list_files',
+      description: 'List files stored on Walrus',
+      inputSchema: { json: { type: 'object', properties: {} } },
+    },
+  },
 ];
 
 // Tool executor
@@ -154,6 +161,12 @@ async function executeTool(name: string, input: any, userAddress: string): Promi
         const types = txs.reduce((m: any, tx) => { m[tx.txType] = (m[tx.txType] || 0) + 1; return m; }, {});
         const breakdown = Object.entries(types).map(([k, v]) => `${k}: ${v}`).join(', ');
         return `Last ${txs.length} transactions: ${breakdown}. Total gas spent: ${totalGas.toFixed(4)} SUI. Ask me to analyze spending patterns, gas optimization, or anything else.`;
+      }
+      case 'list_files': {
+        const { getFiles } = await import('./files');
+        const files = await getFiles();
+        if (!files.length) return 'No files stored yet. You can upload files from the Files screen.';
+        return `${files.length} file(s): ${files.slice(0, 5).map(f => f.name).join(', ')}${files.length > 5 ? '...' : ''}.`;
       }
       default:
         return `Tool "${name}" does not exist`;
