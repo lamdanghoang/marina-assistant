@@ -42,14 +42,24 @@ export default function FilesScreen() {
       if (result.canceled || !result.assets?.[0]) return;
 
       const asset = result.assets[0];
-      setUploading(true);
-      const file = await uploadFile(asset.uri, asset.name, asset.size ?? 0, asset.mimeType ?? 'application/octet-stream');
-      setFiles(prev => [file, ...prev]);
-      Alert.alert('Uploaded', `${asset.name} stored on Walrus.`);
+      const size = asset.size ? `${(asset.size / 1024).toFixed(1)} KB` : 'unknown size';
+      Alert.alert('Upload to Walrus', `"${asset.name}" (${size})\n\nThis will cost ~0.05 SUI for fee.`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Upload', onPress: async () => {
+          setUploading(true);
+          try {
+            const file = await uploadFile(asset.uri, asset.name, asset.size ?? 0, asset.mimeType ?? 'application/octet-stream');
+            setFiles(prev => [file, ...prev]);
+            Alert.alert('Uploaded', `${asset.name} stored on Walrus.`);
+          } catch (e: any) {
+            Alert.alert('Error', e.message || 'Upload failed');
+          } finally {
+            setUploading(false);
+          }
+        }},
+      ]);
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Upload failed');
-    } finally {
-      setUploading(false);
+      Alert.alert('Error', e.message || 'Failed to pick file');
     }
   };
 
