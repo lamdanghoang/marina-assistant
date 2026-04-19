@@ -33,21 +33,31 @@ export async function encrypt(plaintext: string, unlockTimeMs: number, recipient
 
   let data = new TextEncoder().encode(plaintext);
 
-  // Optional PQ layer
+  // Optional PQ layer — only if PQ enabled in settings
   if (recipientAddress) {
     try {
-      const { queryPQPublicKey, pqEncrypt } = await import('./pq-crypto');
-      const recipientPK = await queryPQPublicKey(recipientAddress);
-      if (recipientPK) {
-        const { ciphertext, kemCiphertext } = await pqEncrypt(data, recipientPK);
-        const packed = new Uint8Array(1 + 4 + kemCiphertext.length + ciphertext.length);
-        packed[0] = 1;
-        new DataView(packed.buffer).setUint32(1, kemCiphertext.length);
-        packed.set(kemCiphertext, 5);
-        packed.set(ciphertext, 5 + kemCiphertext.length);
-        data = packed;
+      const SecureStore = await import('expo-secure-store');
+      const { hasLocalPQKey } = await import('./pq-crypto');
+      const pqOn = await hasLocalPQKey();
+      console.log('[seal] PQ enabled (sender has key):', pqOn);
+      if (pqOn) {
+        const { queryPQPublicKey, pqEncrypt } = await import('./pq-crypto');
+        const recipientPK = await queryPQPublicKey(recipientAddress);
+        console.log('[seal] recipient PQ key:', recipientPK ? 'found' : 'not found');
+        if (recipientPK) {
+          const { ciphertext, kemCiphertext } = await pqEncrypt(data, recipientPK);
+          const packed = new Uint8Array(1 + 4 + kemCiphertext.length + ciphertext.length);
+          packed[0] = 1;
+          new DataView(packed.buffer).setUint32(1, kemCiphertext.length);
+          packed.set(kemCiphertext, 5);
+          packed.set(ciphertext, 5 + kemCiphertext.length);
+          data = packed;
+          console.log('[seal] PQ hybrid encrypt applied, packed size:', packed.length);
+        }
       }
-    } catch {}
+    } catch (e: any) {
+      console.warn('[seal] PQ encrypt skipped:', e.message);
+    }
   }
 
   const client = await getSealClient();
@@ -91,12 +101,18 @@ export async function decrypt(encryptedData: Uint8Array, userAddress: string, ca
 
   // Handle PQ layer
   if (decrypted[0] === 1) {
+    console.log('[seal] PQ flag detected, hybrid decrypt...');
     const { getLocalSecretKey, pqDecrypt } = await import('./pq-crypto');
     const sk = await getLocalSecretKey();
+    console.log('[seal] PQ secret key:', sk ? 'found' : 'NOT FOUND');
     if (!sk) throw new Error('PQ secret key not found.');
     const kemLen = new DataView(decrypted.buffer, decrypted.byteOffset).getUint32(1);
-    return new TextDecoder().decode(await pqDecrypt(decrypted.slice(5 + kemLen), decrypted.slice(5, 5 + kemLen), sk));
+    console.log('[seal] KEM ciphertext len:', kemLen, 'total:', decrypted.length);
+    const result = new TextDecoder().decode(await pqDecrypt(decrypted.slice(5 + kemLen), decrypted.slice(5, 5 + kemLen), sk));
+    console.log('[seal] PQ decrypt OK, plaintext length:', result.length);
+    return result;
   }
 
+  console.log('[seal] No PQ flag, Seal-only decrypt');
   return new TextDecoder().decode(decrypted);
 }

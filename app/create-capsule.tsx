@@ -25,10 +25,38 @@ export default function CreateCapsuleScreen() {
   const [unlockDate, setUnlockDate] = useState(new Date(Date.now() + 7 * 86400000));
   const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pqError, setPqError] = useState('');
+  const [checkingPq, setCheckingPq] = useState(false);
+
+  // Check recipient PQ key when address changes
+  const checkRecipientPQ = async (input: string) => {
+    setRecipientName(input);
+    setPqError('');
+    if (!input.trim() || selfCapsule) return;
+
+    // Only check if PQ enabled
+    const SecureStore = await import('expo-secure-store');
+    const pqEnabled = await SecureStore.getItemAsync('marina_pq_enabled');
+    if (pqEnabled !== '1') return;
+
+    setCheckingPq(true);
+    try {
+      let addr = input.trim();
+      if (!addr.startsWith('0x')) {
+        const contact = await findByName(addr, session?.walletAddress);
+        if (!contact) { setCheckingPq(false); return; }
+        addr = contact.walletAddress;
+      }
+      const { queryPQPublicKey } = await import('../src/services/pq-crypto');
+      const pk = await queryPQPublicKey(addr);
+      if (!pk) setPqError('Recipient has no PQ key. They must enable Post-Quantum in Settings first.');
+    } catch {} finally { setCheckingPq(false); }
+  };
 
   const handleCreate = async () => {
     if (!content.trim()) { Alert.alert('Error', 'Enter capsule content'); return; }
     if (unlockDate.getTime() < Date.now()) { Alert.alert('Error', 'Unlock time must be in the future'); return; }
+    if (pqError) { Alert.alert('Error', pqError); return; }
 
     let recipientAddress = session?.walletAddress ?? '';
     let name = 'Self';
@@ -39,7 +67,7 @@ export default function CreateCapsuleScreen() {
         recipientAddress = recipientName.trim();
         name = recipientAddress.slice(0, 8) + '...';
       } else {
-        const contact = await findByName(recipientName);
+        const contact = await findByName(recipientName, session?.walletAddress);
         if (!contact) { Alert.alert('Error', `"${recipientName}" not found in contacts`); return; }
         recipientAddress = contact.walletAddress;
         name = contact.name;
@@ -91,7 +119,9 @@ export default function CreateCapsuleScreen() {
         {!selfCapsule && (
           <View style={styles.field}>
             <Text style={styles.label}>RECIPIENT</Text>
-            <TextInput style={styles.input} placeholder="Contact name or 0x address" placeholderTextColor={colors.onSurfaceVariant + '66'} value={recipientName} onChangeText={setRecipientName} autoCapitalize="none" />
+            <TextInput style={styles.input} placeholder="Contact name or 0x address" placeholderTextColor={colors.onSurfaceVariant + '66'} value={recipientName} onChangeText={checkRecipientPQ} autoCapitalize="none" />
+            {checkingPq && <Text style={{ fontSize: 11, color: colors.onSurfaceVariant, marginTop: 4 }}>Checking PQ key...</Text>}
+            {!!pqError && <Text style={{ fontSize: 11, color: colors.error, marginTop: 4 }}>{pqError}</Text>}
           </View>
         )}
 

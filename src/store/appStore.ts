@@ -30,12 +30,14 @@ export const useAppStore = create<AppState>((set) => ({
   language: 'en-US',
   setLanguage: (language) => {
     set({ language });
-    SecureStore.setItemAsync('marina_language', language).catch(() => {});
+    const addr = useAppStore.getState().session?.walletAddress?.slice(0, 10) || '';
+    SecureStore.setItemAsync(`marina_language_${addr}`, language).catch(() => {});
   },
   voiceEnabled: true,
   setVoiceEnabled: (voiceEnabled) => {
     set({ voiceEnabled });
-    SecureStore.setItemAsync('marina_voice', voiceEnabled ? '1' : '0').catch(() => {});
+    const addr = useAppStore.getState().session?.walletAddress?.slice(0, 10) || '';
+    SecureStore.setItemAsync(`marina_voice_${addr}`, voiceEnabled ? '1' : '0').catch(() => {});
   },
 
   animation: 'idle',
@@ -45,8 +47,9 @@ export const useAppStore = create<AppState>((set) => ({
   setBalance: (balance) => set({ balance }),
 
   loadPreferences: async () => {
-    const lang = await SecureStore.getItemAsync('marina_language');
-    const voice = await SecureStore.getItemAsync('marina_voice');
+    const addr = useAppStore.getState().session?.walletAddress?.slice(0, 10) || '';
+    const lang = await SecureStore.getItemAsync(`marina_language_${addr}`);
+    const voice = await SecureStore.getItemAsync(`marina_voice_${addr}`);
     set({
       language: (lang as SupportedLanguage) || 'en-US',
       voiceEnabled: voice !== '0',
