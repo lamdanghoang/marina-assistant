@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Switch, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
@@ -114,7 +114,7 @@ export default function ProfileScreen() {
         ) : txs.length === 0 ? (
           <Text style={styles.emptyText}>No transactions yet</Text>
         ) : txs.map((tx: any, i: number) => (
-          <View key={tx.digest || i} style={[styles.txRow, i > 0 && styles.txBorder]}>
+          <TouchableOpacity key={tx.digest || i} style={[styles.txRow, i > 0 && styles.txBorder]} onPress={() => tx.digest && Linking.openURL(`https://suiscan.xyz/testnet/tx/${tx.digest}`)}>
             <View style={styles.txIcon}>
               {tx.txType === 'Send' ? <ArrowUpRight size={20} color={colors.primary} /> : tx.txType === 'Receive' ? <ArrowDownLeft size={20} color={colors.secondary} /> : <RefreshCw size={20} color={colors.primary} />}
             </View>
@@ -123,7 +123,7 @@ export default function ProfileScreen() {
               <Text style={styles.txDate}>{tx.timestamp ? new Date(tx.timestamp).toLocaleString() : ''}</Text>
             </View>
             <Text style={[styles.txAmount, tx.txType === 'Receive' && { color: colors.secondary }]}>-{tx.gasFee} SUI</Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </GlassPanel>
 
