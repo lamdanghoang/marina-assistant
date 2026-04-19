@@ -105,7 +105,7 @@ const TOOLS = [
   {
     toolSpec: {
       name: 'upload_file',
-      description: 'User wants to upload a file to Walrus storage. Call this when user asks to upload, store, or save a file.',
+      description: 'ALWAYS call this tool when user wants to upload, store, or save a file. This triggers the file picker UI. Do NOT just reply with text — you MUST call this tool.',
       inputSchema: { json: { type: 'object', properties: {} } },
     },
   },
@@ -249,7 +249,10 @@ export async function sendMessage(
     conversationHistory.push({ role: 'assistant', content: assistantContent });
 
     const text = assistantContent.map((b: any) => b.text).filter(Boolean).join('');
-    const action = text.includes('__ACTION:UPLOAD_FILE__') ? 'upload_file' : undefined;
+    const hasUploadMarker = text.includes('__ACTION:UPLOAD_FILE__');
+    // Also detect if user asked to upload (Claude may not call tool)
+    const userAskedUpload = userMessage.toLowerCase().match(/upload|tải lên|lưu file|store.*file|save.*file/);
+    const action = hasUploadMarker || userAskedUpload ? 'upload_file' : undefined;
     const cleanText = text.replace('__ACTION:UPLOAD_FILE__', '').trim();
     return { message: cleanText || 'Ready to upload!', emotion: detectEmotion(cleanText), action };
   } catch (err) {

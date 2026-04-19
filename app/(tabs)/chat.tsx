@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Send, Mic } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius } from '../../src/constants/theme';
@@ -56,6 +56,7 @@ export default function ChatScreen() {
             const { uploadFile } = await import('../../src/services/files');
             await uploadFile(asset.uri, asset.name, asset.size ?? 0, asset.mimeType ?? 'application/octet-stream');
             addMessage(createMessage(`${asset.name} uploaded to Walrus!`, 'marina', language));
+            Alert.alert('Success', `${asset.name} uploaded to Walrus.`);
           } catch (e: any) {
             addMessage(createMessage(`Upload failed: ${e.message}`, 'marina', language));
           }

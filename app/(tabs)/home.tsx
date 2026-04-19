@@ -28,6 +28,7 @@ export default function HomeScreen() {
   const [processing, setProcessing] = useState(false);
   const [charAnim, setCharAnim] = useState('idle');
   const [msg, setMsg] = useState('Good morning, Traveler. The Sui network is calm today. How can I assist you?');
+  const [showUpload, setShowUpload] = useState(false);
 
   // Balance from global polling (in _layout.tsx)
 
@@ -39,7 +40,8 @@ export default function HomeScreen() {
     try {
       const r = await sendMessage(text, language, session?.walletAddress);
       setMsg(r.message);
-      addMessage(createMessage(r.message, 'marina', language));
+      setShowUpload(r.action === 'upload_file');
+      addMessage(createMessage(r.message, 'marina', language, r.action === 'upload_file' ? { type: 'upload_file' } : undefined));
       setCharAnim(r.emotion === 'happy' ? 'happy' : 'idle');
       if (voiceEnabled) { setCharAnim('talking'); await speak(r.message, language); setCharAnim('idle'); }
     } catch { setMsg('Sorry, something went wrong.'); setCharAnim('sad'); }
@@ -80,7 +82,25 @@ export default function HomeScreen() {
         <GlassPanel style={styles.bubble}>
           <Text style={styles.bubbleLabel}>{listening ? 'YOU' : 'MARINA'}</Text>
           <Text style={styles.bubbleText} numberOfLines={3}>{msg}</Text>
-          {msg.length > 120 && <Text style={styles.more}>View in Chat →</Text>}
+          {showUpload && (
+            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, marginTop: 8, alignSelf: 'flex-start' }} onPress={async () => {
+              try {
+                const { getDocumentAsync } = await import('expo-document-picker');
+                const result = await getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
+                if (result.canceled || !result.assets?.[0]) return;
+                const asset = result.assets[0];
+                setMsg(`Uploading ${asset.name}...`); setShowUpload(false);
+                const { uploadFile } = await import('../../src/services/files');
+                await uploadFile(asset.uri, asset.name, asset.size ?? 0, asset.mimeType ?? 'application/octet-stream');
+                const doneMsg = 'File uploaded successfully!';
+                setMsg(doneMsg); setCharAnim('happy');
+                if (voiceEnabled) { setCharAnim('talking'); await speak(doneMsg, language); setCharAnim('idle'); }
+              } catch (e: any) { setMsg(`Upload failed: ${e.message}`); setCharAnim('sad'); }
+            }}>
+              <Text style={{ color: colors.surface, fontSize: 13, fontWeight: '700' }}>Choose File</Text>
+            </TouchableOpacity>
+          )}
+          {!showUpload && msg.length > 120 && <Text style={styles.more}>View in Chat →</Text>}
         </GlassPanel>
       </TouchableOpacity>
 
