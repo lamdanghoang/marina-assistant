@@ -18,7 +18,7 @@ Marina is a mobile AI assistant (React Native/Expo) that makes Sui blockchain ac
 
 - 🤖 AI agent with function calling (send SUI, create capsules, check balance, manage contacts, ...)
 - 🔐 Time Capsules: Seal encryption + Walrus storage + on-chain metadata
-- 🛡️ Post-quantum encryption (ML-KEM-768) with on-chain key registry
+- 🛡️ ML-KEM-768 encryption with on-chain key registry
 - 🔑 Dual auth: seed phrase wallet + zkLogin (Google)
 - 🎙️ Voice interface: speech-to-text + text-to-speech
 - 📁 Decentralized file storage on Walrus
@@ -29,6 +29,6 @@ Marina is a mobile AI assistant (React Native/Expo) that makes Sui blockchain ac
 - **Frontend**: React Native (Expo SDK 55), TypeScript, Zustand
 - **Blockchain**: Sui Network (Move smart contracts)
 - **AI**: Amazon Bedrock (Claude Sonnet) with function calling
-- **Encryption**: Mysten Seal (threshold encryption), ML-KEM-768 (post-quantum)
+- **Encryption**: Mysten Seal (threshold encryption), ML-KEM-768
 - **Storage**: Walrus (decentralized blob storage)
 - **Auth**: zkLogin (Google OAuth + Enoki) + Ed25519 seed phrase wallet
