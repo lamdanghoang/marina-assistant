@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ShieldCheck, Plus } from 'lucide-react-native';
 import { colors, typography, spacing, borderRadius } from '../../src/constants/theme';
 import { GlassPanel } from '../../src/components/shared/GlassPanel';
@@ -11,14 +11,13 @@ import { useAppStore } from '../../src/store/appStore';
 import { getCapsules, isLocked, timeUntilUnlock } from '../../src/services/capsule';
 import type { Capsule } from '../../src/types';
 
-import { useFocusEffect } from 'expo-router';
-
 export default function CapsulesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const session = useAppStore((s) => s.session);
   const [capsules, setCapsules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [, setTick] = useState(0);
 
   const fetchCapsules = useCallback(() => {
     if (session?.walletAddress) {
@@ -26,8 +25,13 @@ export default function CapsulesScreen() {
     }
   }, [session?.walletAddress]);
 
-  // Refetch every time screen is focused
   useFocusEffect(fetchCapsules);
+
+  // Countdown timer — re-render every second
+  useFocusEffect(useCallback(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, []));
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
