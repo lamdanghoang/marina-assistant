@@ -22,14 +22,21 @@ export async function upload(data: Uint8Array, ownerAddress?: string): Promise<{
 }
 
 export async function download(blobId: string): Promise<string> {
+  try {
+    const res = await fetch(`${WALRUS_BACKEND}/read/${blobId}`);
+    if (res.ok) return res.text();
+  } catch {}
   const res = await fetch(`${WALRUS_AGGREGATOR}/v1/blobs/${blobId}`);
   if (!res.ok) throw new Error(`Walrus download failed: ${res.status}`);
   return res.text();
 }
 
 export async function downloadBytes(blobId: string): Promise<Uint8Array> {
+  try {
+    const res = await fetch(`${WALRUS_BACKEND}/read/${blobId}`);
+    if (res.ok) return new Uint8Array(await res.arrayBuffer());
+  } catch {}
   const res = await fetch(`${WALRUS_AGGREGATOR}/v1/blobs/${blobId}`);
   if (!res.ok) throw new Error(`Walrus download failed: ${res.status}`);
-  const buf = await res.arrayBuffer();
-  return new Uint8Array(buf);
+  return new Uint8Array(await res.arrayBuffer());
 }

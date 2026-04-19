@@ -151,10 +151,12 @@ export default function CreateCapsuleScreen() {
           <View style={styles.pickerOverlay}>
             <TouchableOpacity style={styles.pickerBg} onPress={() => setShowPicker(false)} activeOpacity={1} />
             <View style={styles.pickerCard}>
-              <DateTimePicker value={unlockDate} mode="datetime" display="spinner" minimumDate={new Date()} onChange={(_, date) => { if (date) setUnlockDate(date); }} themeVariant="dark" />
-              <TouchableOpacity style={styles.pickerDone} onPress={() => setShowPicker(false)}>
-                <Text style={styles.pickerDoneText}>CONFIRM</Text>
-              </TouchableOpacity>
+              <DateTimePicker value={unlockDate} mode="datetime" display={Platform.OS === 'ios' ? 'spinner' : 'default'} minimumDate={new Date()} onChange={(_, date) => { if (date) setUnlockDate(date); if (Platform.OS === 'android') setShowPicker(false); }} themeVariant="dark" />
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity style={styles.pickerDone} onPress={() => setShowPicker(false)}>
+                  <Text style={styles.pickerDoneText}>CONFIRM</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         )}
